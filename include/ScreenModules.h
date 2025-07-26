@@ -507,12 +507,30 @@ public:
                                const std::string& value) = 0;
 };
 
+enum class AsyncState {
+    IDLE,
+    RUNNING,
+    COMPLETED,
+    FAILED,
+    TIMEOUT
+};
+
 /**
  * Generic List Screen
  * Configurable screen that displays a list of items with associated actions
  */
 class GenericListScreen : public ScreenModule {
 public:
+    // Item structure
+    struct ListItem {
+        std::string title;
+        std::string action;
+        bool isSelected = false;
+        bool async = false;
+        int timeout = 300;  // Default 5 minutes
+        std::string log_file;
+        std::string progress_title;
+    };
     GenericListScreen(std::shared_ptr<Display> display, std::shared_ptr<InputDevice> input);
     ~GenericListScreen();
 
@@ -527,6 +545,15 @@ public:
     void setConfig(const nlohmann::json& config);
     void loadDynamicItems();
 
+    void startAsyncProcess(const ListItem& item);
+    void updateAsyncProgress();
+    void renderAsyncProgress();
+    void checkAsyncCompletion();
+    void killAsyncProcess();
+    bool parseLogForCompletion();
+    int calculateProgressPercentage();
+    std::string formatElapsedTime();
+
     //callback
     void setCallback(ScreenCallback* callback) { m_callback = callback; }
     // Helper method to trigger callbacks
@@ -535,13 +562,8 @@ public:
             m_callback->onScreenAction(m_id, action, value);
         }
     }
+
 private:
-    // Item structure
-    struct ListItem {
-        std::string title;
-        std::string action;
-        bool isSelected = false;
-    };
     void renderList();
     void executeAction(const std::string& action);
     std::string executeCommand(const std::string& command) const;
@@ -570,4 +592,17 @@ private:
     std::string m_callbackAction;
     std::string m_callbackValue;
     std::string m_selectedValue;
+
+    AsyncState m_asyncState = AsyncState::IDLE;
+    pid_t m_asyncPid = -1;
+    std::chrono::steady_clock::time_point m_asyncStartTime;
+    std::string m_asyncLogFile;
+    std::string m_asyncProgressTitle;
+    int m_asyncTimeout = 0;
+    bool m_asyncWaitingForUser = false;
+    std::string m_asyncResultMessage;
+    int m_lastDisplayedPercentage = -1;
+    std::string m_lastDisplayedTime = "";
+    bool m_asyncDisplayInitialized = false;
+
 };

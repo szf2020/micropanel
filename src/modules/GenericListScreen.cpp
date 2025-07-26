@@ -8,6 +8,11 @@
 #include <memory>
 #include <array>
 #include <sstream>
+#include <sys/wait.h>
+#include <signal.h>
+#include <chrono>
+#include <fstream>
+
 
 GenericListScreen::GenericListScreen(std::shared_ptr<Display> display, std::shared_ptr<InputDevice> input)
     : ScreenModule(display, input), m_selectedValue("")
@@ -45,6 +50,23 @@ void GenericListScreen::setConfig(const nlohmann::json& config)
 
             if (item.contains("action") && item["action"].is_string()) {
                 listItem.action = item["action"].get<std::string>();
+            }
+
+            // Parse async properties
+            if (item.contains("async") && item["async"].is_boolean()) {
+                listItem.async = item["async"].get<bool>();
+            }
+
+            if (item.contains("timeout") && item["timeout"].is_number_integer()) {
+                listItem.timeout = item["timeout"].get<int>();
+            }
+
+            if (item.contains("log_file") && item["log_file"].is_string()) {
+                listItem.log_file = item["log_file"].get<std::string>();
+            }
+
+            if (item.contains("progress_title") && item["progress_title"].is_string()) {
+                listItem.progress_title = item["progress_title"].get<std::string>();
             }
 
             m_items.push_back(listItem);
@@ -119,7 +141,9 @@ void GenericListScreen::enter()
 
 void GenericListScreen::update()
 {
-    // Nothing to update periodically
+    if (m_asyncState == AsyncState::RUNNING) {
+        updateAsyncProgress();
+    }
 }
 
 void GenericListScreen::exit()
@@ -139,6 +163,37 @@ bool GenericListScreen::handleInput()
             notifyCallback(m_callbackAction, m_selectedValue);
         }
        return false;
+    }
+
+    // Handle async completion states - only accept input when waiting for user
+    if (m_asyncWaitingForUser && (m_asyncState == AsyncState::COMPLETED ||
+                                  m_asyncState == AsyncState::FAILED ||
+                                  m_asyncState == AsyncState::TIMEOUT)) {
+        if (m_input->waitForEvents(100) > 0) {
+            bool buttonPressed = false;
+            m_input->processEvents(
+                [](int) {}, // Ignore rotation
+                [&]() { buttonPressed = true; }
+            );
+
+            if (buttonPressed) {
+                // Return to normal list view
+                m_asyncState = AsyncState::IDLE;
+                m_asyncWaitingForUser = false;
+                m_display->updateActivityTimestamp();
+                enter(); // Redraw the list
+            }
+        }
+        return true;
+    }
+
+    // Don't handle input during async process
+    if (m_asyncState == AsyncState::RUNNING) {
+        // Drain any pending input events to prevent them from being processed later
+        while (m_input->waitForEvents(10) > 0) {
+            m_input->processEvents([](int) {}, []() {});
+        }
+        return true;
     }
 
     if (m_input->waitForEvents(100) > 0) {
@@ -192,7 +247,9 @@ bool GenericListScreen::handleInput()
                     m_shouldExit = true;
                     return true;//false;
                 }
-
+                if (selectedItem.async) {
+                    startAsyncProcess(selectedItem);
+                } else {
                 // Execute action if defined
                 if (!selectedItem.action.empty()) {
                     executeAction(selectedItem.action);
@@ -202,6 +259,7 @@ bool GenericListScreen::handleInput()
                     }
 		    renderList(); // Redraw after action
                 }
+		}
             }
         }
     }
@@ -375,4 +433,279 @@ void GenericListScreen::loadDynamicItems()
     }
 
     Logger::debug("Loaded " + std::to_string(m_items.size()) + " items (including static items)");
+}
+
+
+// New async process methods
+void GenericListScreen::startAsyncProcess(const ListItem& item)
+{
+    Logger::debug("Starting async process: " + item.action);
+
+    // Prepare the command with parameter substitution
+    std::string command = item.action;
+    size_t paramPos = command.find("$1");
+    if (paramPos != std::string::npos) {
+        command.replace(paramPos, 2, item.title);
+    }
+
+    // Prepare progress title with parameter substitution
+    m_asyncProgressTitle = item.progress_title;
+    paramPos = m_asyncProgressTitle.find("$1");
+    if (paramPos != std::string::npos) {
+        m_asyncProgressTitle.replace(paramPos, 2, item.title);
+    }
+
+    // Clear the log file
+    if (!item.log_file.empty()) {
+        std::ofstream ofs(item.log_file, std::ofstream::trunc);
+        ofs.close();
+    }
+
+    // Fork the process
+    m_asyncPid = fork();
+    if (m_asyncPid == 0) {
+        // Child process - redirect output to log file
+        if (!item.log_file.empty()) {
+            freopen(item.log_file.c_str(), "w", stdout);
+            freopen(item.log_file.c_str(), "w", stderr);
+        }
+
+        // Execute the command
+        execl("/bin/sh", "sh", "-c", command.c_str(), (char*)NULL);
+        _exit(1); // Should not reach here
+    } else if (m_asyncPid > 0) {
+        // Parent process - set up async state
+        m_asyncState = AsyncState::RUNNING;
+        m_asyncStartTime = std::chrono::steady_clock::now();
+        m_asyncLogFile = item.log_file;
+        m_asyncTimeout = item.timeout;
+        m_asyncWaitingForUser = false;
+
+        // Reset display state tracking
+        m_lastDisplayedPercentage = -1;
+        m_lastDisplayedTime = "";
+        m_asyncDisplayInitialized = false;
+
+        // Clear display and show initial progress
+        m_display->clear();
+        usleep(Config::DISPLAY_CMD_DELAY * 5);
+        renderAsyncProgress();
+
+        Logger::debug("Async process started with PID: " + std::to_string(m_asyncPid));
+    } else {
+        // Fork failed
+        Logger::debug("Failed to fork async process");
+        m_asyncState = AsyncState::FAILED;
+        m_asyncResultMessage = "Failed to start process";
+        m_asyncWaitingForUser = true;
+        renderAsyncProgress();
+    }
+}
+
+void GenericListScreen::updateAsyncProgress()
+{
+    // Check if process completed
+    checkAsyncCompletion();
+
+    // Check for timeout
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::steady_clock::now() - m_asyncStartTime).count();
+
+    if (elapsed >= m_asyncTimeout && m_asyncState == AsyncState::RUNNING) {
+        Logger::debug("Async process timed out after " + std::to_string(elapsed) + " seconds");
+        killAsyncProcess();
+        m_asyncState = AsyncState::TIMEOUT;
+        m_asyncResultMessage = "Action timed-out\nUpate failed!";
+        m_asyncWaitingForUser = true;
+    }
+
+    // Update display
+    renderAsyncProgress();
+}
+
+void GenericListScreen::renderAsyncProgress()
+{
+    if (m_asyncState == AsyncState::RUNNING) {
+        // Calculate current progress info
+        int currentPercentage = calculateProgressPercentage();
+        std::string currentTime = formatElapsedTime();
+
+        // Only update display if something changed or first time
+        if (!m_asyncDisplayInitialized) {
+            // First time - clear and draw everything
+            m_display->clear();
+            usleep(Config::DISPLAY_CMD_DELAY * 5);
+
+            // Show progress title
+            m_display->drawText(0, 0, m_asyncProgressTitle);
+            usleep(Config::DISPLAY_CMD_DELAY);
+
+            // Show initial progress
+            std::string progressText = std::to_string(currentPercentage) + "% - " + currentTime;
+            m_display->drawText(0, 16, progressText);
+            usleep(Config::DISPLAY_CMD_DELAY);
+
+            m_lastDisplayedPercentage = currentPercentage;
+            m_lastDisplayedTime = currentTime;
+            m_asyncDisplayInitialized = true;
+
+        } else if (currentPercentage != m_lastDisplayedPercentage || currentTime != m_lastDisplayedTime) {
+            // Only update the progress line if values changed
+            std::string progressText = std::to_string(currentPercentage) + "% - " + currentTime;
+
+            // Clear only the progress line area
+            m_display->drawText(0, 16, "                "); // Clear with spaces
+            usleep(Config::DISPLAY_CMD_DELAY);
+
+            // Draw updated progress
+            m_display->drawText(0, 16, progressText);
+            usleep(Config::DISPLAY_CMD_DELAY);
+
+            m_lastDisplayedPercentage = currentPercentage;
+            m_lastDisplayedTime = currentTime;
+        }
+        // If nothing changed, don't update display at all
+
+    } else if (m_asyncState == AsyncState::COMPLETED) {
+        // Clear display once for completion message
+        m_display->clear();
+        usleep(Config::DISPLAY_CMD_DELAY * 5);
+
+        m_display->drawText(0, 0, "Update");
+        usleep(Config::DISPLAY_CMD_DELAY);
+        m_display->drawText(0, 8, "Success!");
+        usleep(Config::DISPLAY_CMD_DELAY);
+        m_display->drawText(0, 24, "Press any button");
+        usleep(Config::DISPLAY_CMD_DELAY);
+        m_display->drawText(0, 32, "to continue");
+        usleep(Config::DISPLAY_CMD_DELAY);
+
+    } else if (m_asyncState == AsyncState::FAILED || m_asyncState == AsyncState::TIMEOUT) {
+        // Clear display once for error message
+        m_display->clear();
+        usleep(Config::DISPLAY_CMD_DELAY * 5);
+
+        // Split multi-line messages
+        std::string msg = m_asyncResultMessage;
+        size_t newlinePos = msg.find('\n');
+        if (newlinePos != std::string::npos) {
+            m_display->drawText(0, 0, msg.substr(0, newlinePos));
+            usleep(Config::DISPLAY_CMD_DELAY);
+            m_display->drawText(0, 8, msg.substr(newlinePos + 1));
+            usleep(Config::DISPLAY_CMD_DELAY);
+        } else {
+            m_display->drawText(0, 0, msg);
+            usleep(Config::DISPLAY_CMD_DELAY);
+        }
+
+        m_display->drawText(0, 24, "Press button");
+        usleep(Config::DISPLAY_CMD_DELAY);
+        m_display->drawText(0, 32, "to continue");
+        usleep(Config::DISPLAY_CMD_DELAY);
+    }
+}
+
+void GenericListScreen::checkAsyncCompletion()
+{
+    if (m_asyncPid <= 0 || m_asyncState != AsyncState::RUNNING) {
+        return;
+    }
+
+    // Check if process is still running
+    int status;
+    pid_t result = waitpid(m_asyncPid, &status, WNOHANG);
+
+    if (result == m_asyncPid) {
+        // Process completed
+        Logger::debug("Async process completed with status: " + std::to_string(status));
+
+        // Check log file for success/error patterns
+        if (parseLogForCompletion()) {
+            m_asyncState = AsyncState::COMPLETED;
+        } else {
+            m_asyncState = AsyncState::FAILED;
+            m_asyncResultMessage = "Update failed!";
+        }
+
+        m_asyncWaitingForUser = true;
+        m_asyncPid = -1;
+
+    } else if (result == -1) {
+        // Error checking process status
+        Logger::debug("Error checking async process status");
+        m_asyncState = AsyncState::FAILED;
+        m_asyncResultMessage = "Update status error";
+        m_asyncWaitingForUser = true;
+        m_asyncPid = -1;
+    }
+    // result == 0 means process is still running
+}
+
+void GenericListScreen::killAsyncProcess()
+{
+    if (m_asyncPid > 0) {
+        Logger::debug("Killing async process: " + std::to_string(m_asyncPid));
+        kill(m_asyncPid, SIGTERM);
+        usleep(1000000); // Wait 1 second
+
+        // Check if it's still running, force kill if needed
+        int status;
+        if (waitpid(m_asyncPid, &status, WNOHANG) == 0) {
+            kill(m_asyncPid, SIGKILL);
+            waitpid(m_asyncPid, &status, 0);
+        }
+
+        m_asyncPid = -1;
+    }
+}
+
+bool GenericListScreen::parseLogForCompletion()
+{
+    if (m_asyncLogFile.empty()) {
+        return true; // Assume success if no log file specified
+    }
+
+    std::ifstream logFile(m_asyncLogFile);
+    if (!logFile.is_open()) {
+        return false;
+    }
+
+    std::string line;
+    bool foundSuccess = false;
+    bool foundError = false;
+
+    while (std::getline(logFile, line)) {
+        if (line.find("[SUCCESS]") != std::string::npos) {
+            foundSuccess = true;
+        }
+        if (line.find("[ERROR]") != std::string::npos) {
+            foundError = true;
+        }
+    }
+
+    logFile.close();
+
+    // Success if we found [SUCCESS] and no [ERROR]
+    return foundSuccess && !foundError;
+}
+
+int GenericListScreen::calculateProgressPercentage()
+{
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::steady_clock::now() - m_asyncStartTime).count();
+
+    int percentage = (elapsed * 100) / m_asyncTimeout;
+    return std::min(percentage, 99); // Cap at 99% until actually complete
+}
+
+std::string GenericListScreen::formatElapsedTime()
+{
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::steady_clock::now() - m_asyncStartTime).count();
+
+    int minutes = elapsed / 60;
+    int seconds = elapsed % 60;
+
+    return std::to_string(minutes) + ":" +
+           (seconds < 10 ? "0" : "") + std::to_string(seconds);
 }

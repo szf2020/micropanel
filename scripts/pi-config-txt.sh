@@ -10,13 +10,13 @@
 # Function to display usage
 usage() {
     echo "Usage:"
-    echo "  Write config: $0 --input=/boot/firmware/config.txt --type=<14.6/15.6/27/edid>"
+    echo "  Write config: $0 --input=/boot/firmware/config.txt --type=<14.6-fhd/14.6/15.6/27/edid>"
     echo "  Read config: $0 --input=/boot/firmware/config.txt [--query-config] [-v]"
     echo "  Query display: $0 --query-display [-v]"
     echo ""
     echo "Options:"
     echo "  --input=FILE    Specify the configuration file path"
-    echo "  --type=TYPE     Configure for display type (14.6, 15.6, 27, edid)"
+    echo "  --type=TYPE     Configure for display type (14.6-fhd, 14.6, 15.6, 27, edid)"
     echo "  --query-config  Read and output configured display type/resolution"
     echo "  --query-display Query actual display resolution on HDMI output"
     echo "  -v, --verbose   Show detailed information"
@@ -86,7 +86,39 @@ extract_config_content() {
 get_reference_config() {
     local config_type="$1"
     local temp_file=$(mktemp)
-    
+
+    case $config_type in
+        "14.6-fhd")
+            cat > "$temp_file" << 'EOF'
+dtparam=audio=on
+camera_auto_detect=1
+auto_initramfs=1
+disable_overscan=1
+arm_64bit=1
+arm_boost=1
+dtoverlay=i2c1=on
+dtparam=i2c_arm=on
+dtoverlay=vc4-fkms-v3d
+disable_fw_kms_setup=1
+max_framebuffers=2
+hdmi_group=2
+hdmi_mode=87
+hdmi_timings=1920 0 76 22 10 1080 0 28 4 10 0 0 0 60 0 136687000 3
+hdmi_pixel_freq_limit=136687000
+framebuffer_width=1920
+framebuffer_height=1080
+max_framebuffer_width=1920
+max_framebuffer_height=1080
+config_hdmi_boost=4
+[cm4]
+otg_mode=1
+[cm5]
+dtoverlay=dwc2,dr_mode=host
+[all]
+enable_uart=1
+init_uart_clock=16000000
+EOF
+            ;;
     case $config_type in
         "14.6")
             cat > "$temp_file" << 'EOF'
@@ -115,6 +147,8 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000
 EOF
             ;;
         "15.6")
@@ -144,6 +178,8 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000
 EOF
             ;;
         "27")
@@ -173,6 +209,8 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000
 EOF
             ;;
         "edid")
@@ -194,6 +232,8 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000
 EOF
             ;;
     esac
@@ -207,6 +247,9 @@ get_config_resolution() {
     local config_type="$1"
     
     case $config_type in
+        "14.6-fhd")
+            echo "1920x1080"
+            ;;
         "14.6")
             echo "2560x1440"
             ;;
@@ -229,7 +272,7 @@ get_config_resolution() {
 read_current_config() {
     local current_content=$(extract_config_content "$INPUT_FILE")
     
-    for type in "14.6" "15.6" "27" "edid"; do
+    for type in "14.6-fhd" "14.6" "15.6" "27" "edid"; do
         local reference_content=$(get_reference_config "$type")
         
         if [ "$current_content" = "$reference_content" ]; then
@@ -409,7 +452,10 @@ get_current_resolution() {
     
     # As a fallback, detect if we're using a custom display from config.txt
     if [ -f "/boot/firmware/config.txt" ]; then
-        if grep -q "hdmi_timings=2560 0 10 18 216 1440 0 10 4 330 0 0 0 60 0 300000000 4" "/boot/firmware/config.txt"; then
+        if grep -q "hdmi_timings=1920 0 76 22 10 1080 0 28 4 10 0 0 0 60 0 136687000 3" "/boot/firmware/config.txt"; then
+            echo "1920x1080"
+            return 0
+        elif grep -q "hdmi_timings=2560 0 10 18 216 1440 0 10 4 330 0 0 0 60 0 300000000 4" "/boot/firmware/config.txt"; then
             echo "2560x1440"
             return 0
         elif grep -q "hdmi_timings=2560 0 10 24 222 1440 0 11 3 38 0 0 0 62 0 261888000 4" "/boot/firmware/config.txt"; then
@@ -441,7 +487,41 @@ write_config() {
     local output_file="$2"
     
     case $config_type in
-        "14.6")
+        "14.6-fhd")
+            cat > "$output_file" << 'EOF'
+dtparam=audio=on
+camera_auto_detect=1
+auto_initramfs=1
+disable_overscan=1
+arm_64bit=1
+arm_boost=1
+dtoverlay=i2c1=on
+dtparam=i2c_arm=on
+dtoverlay=vc4-fkms-v3d
+disable_fw_kms_setup=1
+max_framebuffers=2
+hdmi_group=2
+hdmi_mode=87
+hdmi_timings=1920 0 76 22 10 1080 0 28 4 10 0 0 0 60 0 136687000 3
+hdmi_pixel_freq_limit=136687000
+framebuffer_width=1920
+framebuffer_height=1080
+max_framebuffer_width=1920
+max_framebuffer_height=1080
+config_hdmi_boost=4
+[cm4]
+otg_mode=1
+[cm5]
+dtoverlay=dwc2,dr_mode=host
+[all]
+enable_uart=1
+init_uart_clock=16000000
+EOF
+            if [ $VERBOSE -eq 1 ]; then
+                echo "Updated config for 14.6-fhd\" display"
+            fi
+            ;;
+       "14.6")
             cat > "$output_file" << 'EOF'
 dtparam=audio=on
 camera_auto_detect=1
@@ -468,6 +548,8 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 14.6\" display"
@@ -500,6 +582,8 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 15.6\" display"
@@ -532,6 +616,8 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 27\" display"
@@ -556,6 +642,8 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for EDID auto-detection display"

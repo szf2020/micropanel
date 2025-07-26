@@ -15,3 +15,5 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 [all]
+enable_uart=1
+init_uart_clock=16000000

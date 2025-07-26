@@ -112,6 +112,35 @@
     ]
     },
     {
+      "id": "mcu_flash_menu",
+      "type": "GenericList",
+      "title": "IOC-Update",
+      "enabled": true,
+      "list_items": [
+      {
+      "title": "983HH",
+      "action": "cd $MICROPANEL_HOME/flashrh850 && ./flashrh850.sh --script=bios-ver-09-autorun-delay.txt --bios=$1_Board_ROMBIOS.bin",
+      "async": true,
+      "timeout": 120,
+      "log_file": "/tmp/rh850-flash.log",
+      "progress_title": "Flashing MCU $1...",
+      "parse_progress": true
+      },
+      {
+      "title": "EJ14-6",
+      "action": "cd $MICROPANEL_HOME/flashrh850 && ./flashrh850.sh --script=bios-ver-09-autorun-delay.txt --bios=$1_Board_ROMBIOS.bin",
+      "async": true,
+      "timeout": 120,
+      "log_file": "/tmp/rh850-flash.log",
+      "progress_title": "Flashing IOC $1...",
+      "parse_progress": true
+      },
+      {
+      "title": "Back"
+      }
+    ]
+    }, 
+    {
       "id": "buzzer_settings",
       "title": "Buzzer",
       "enabled": false,

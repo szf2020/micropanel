@@ -68,6 +68,10 @@ void GenericListScreen::setConfig(const nlohmann::json& config)
             if (item.contains("progress_title") && item["progress_title"].is_string()) {
                 listItem.progress_title = item["progress_title"].get<std::string>();
             }
+            
+	    if (item.contains("parse_progress") && item["parse_progress"].is_boolean()) {
+                listItem.parse_progress = item["parse_progress"].get<bool>();
+            }
 
             m_items.push_back(listItem);
         }
@@ -440,6 +444,8 @@ void GenericListScreen::loadDynamicItems()
 void GenericListScreen::startAsyncProcess(const ListItem& item)
 {
     Logger::debug("Starting async process: " + item.action);
+    m_parseProgress = item.parse_progress;
+    m_lastParsedPercentage = -1;
 
     // Prepare the command with parameter substitution
     std::string command = item.action;
@@ -681,6 +687,19 @@ bool GenericListScreen::parseLogForCompletion()
         if (line.find("[ERROR]") != std::string::npos) {
             foundError = true;
         }
+        
+	// Check for RH850 MCU success patterns
+        if (line.find("Flash verification successful") != std::string::npos ||
+            line.find("Optionbyte verification successful") != std::string::npos) {
+            foundSuccess = true;
+        }
+        
+        // Check for RH850 MCU error patterns  
+        if (line.find("Error") != std::string::npos ||
+            line.find("Failed") != std::string::npos ||
+            line.find("failed") != std::string::npos) {
+            foundError = true;
+        }
     }
 
     logFile.close();
@@ -691,6 +710,13 @@ bool GenericListScreen::parseLogForCompletion()
 
 int GenericListScreen::calculateProgressPercentage()
 {
+    if (m_parseProgress) {
+        int parsedProgress = parseProgressFromLog();
+        if (parsedProgress >= 0) {
+            return parsedProgress;
+        }
+    }
+
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::steady_clock::now() - m_asyncStartTime).count();
 
@@ -708,4 +734,40 @@ std::string GenericListScreen::formatElapsedTime()
 
     return std::to_string(minutes) + ":" +
            (seconds < 10 ? "0" : "") + std::to_string(seconds);
+}
+
+int GenericListScreen::parseProgressFromLog()
+{
+    if (m_asyncLogFile.empty()) return -1;
+    
+    std::ifstream logFile(m_asyncLogFile);
+    if (!logFile.is_open()) return -1;
+    
+    std::string line;
+    int lastPercentage = -1;
+    
+    while (std::getline(logFile, line)) {
+        // Look for percentage patterns like "14.7%" or "29.0%"
+        size_t percentPos = line.find('%');
+        if (percentPos != std::string::npos) {
+            // Find the start of the number before %
+            size_t start = percentPos;
+            while (start > 0 && (std::isdigit(line[start-1]) || line[start-1] == '.')) {
+                start--;
+            }
+            
+            if (start < percentPos) {
+                std::string percentStr = line.substr(start, percentPos - start);
+                try {
+                    float percent = std::stof(percentStr);
+                    lastPercentage = static_cast<int>(percent);
+                } catch (...) {
+                    // Ignore parsing errors
+                }
+            }
+        }
+    }
+    
+    logFile.close();
+    return lastPercentage;
 }

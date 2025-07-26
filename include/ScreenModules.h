@@ -530,6 +530,7 @@ public:
         int timeout = 300;  // Default 5 minutes
         std::string log_file;
         std::string progress_title;
+	bool parse_progress = false;
     };
     GenericListScreen(std::shared_ptr<Display> display, std::shared_ptr<InputDevice> input);
     ~GenericListScreen();
@@ -553,6 +554,7 @@ public:
     bool parseLogForCompletion();
     int calculateProgressPercentage();
     std::string formatElapsedTime();
+    int parseProgressFromLog();
 
     //callback
     void setCallback(ScreenCallback* callback) { m_callback = callback; }
@@ -604,5 +606,6 @@ private:
     int m_lastDisplayedPercentage = -1;
     std::string m_lastDisplayedTime = "";
     bool m_asyncDisplayInitialized = false;
-
+    bool m_parseProgress = false;
+    int m_lastParsedPercentage = -1;
 };

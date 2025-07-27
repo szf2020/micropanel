@@ -104,6 +104,7 @@ public:
     int getFd() const { return m_fd; }
 
 private:
+    // EXISTING: Rotary encoder state tracking
     struct {
         struct timeval lastKeyTime = {0, 0};
         int consecutiveSameKey = 0;
@@ -113,6 +114,21 @@ private:
         int totalRelX = 0;
         int totalRelY = 0;  // Added to track vertical movement
     } m_state;
+
+    // NEW: Keyboard synthesis state tracking
+    struct {
+        bool leftPending = false;
+        bool rightPending = false;
+        bool upPending = false;
+        bool downPending = false;
+        struct timeval leftFirstTime = {0, 0};
+        struct timeval rightFirstTime = {0, 0};
+        struct timeval upFirstTime = {0, 0};
+        struct timeval downFirstTime = {0, 0};
+    } m_keyboardState;
+
+    // NEW: Process pending keyboard synthesis events
+    void processKeyboardSynthesis(std::function<void(int)> onRotation);
 };
 
 /**

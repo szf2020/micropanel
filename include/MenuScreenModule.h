@@ -36,6 +36,10 @@ public:
     void onScreenAction(const std::string& screenId,
                       const std::string& action,
                       const std::string& value) override;
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
+    void setGPIOHandler(std::function<void(std::shared_ptr<ScreenModule>)> gpioHandler);
+    void setUseGPIOMode(bool useGPIO) { m_useGPIOMode = useGPIO; }
 
 private:
     struct SubmenuItem {
@@ -56,4 +60,7 @@ private:
     void buildSubmenu();
     void executeSubmenuAction(const std::string& moduleId);
     std::map<std::string, std::string> m_callbackValues;
+
+    std::function<void(std::shared_ptr<ScreenModule>)> m_gpioHandler;
+    bool m_useGPIOMode = false;
 };

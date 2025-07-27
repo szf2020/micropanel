@@ -232,7 +232,15 @@ void MenuScreenModule::executeSubmenuAction(const std::string& moduleId) {
     usleep(Config::DISPLAY_CMD_DELAY * 5);
 
     // Run the module
-    module->run();
+    //module->run();
+    // Run the module (with GPIO support if enabled)
+    if (m_useGPIOMode && m_gpioHandler) {
+        std::cout << "MenuScreenModule: Using GPIO handler for module" << std::endl;
+        m_gpioHandler(module);
+    } else {
+        std::cout << "MenuScreenModule: Using traditional run() for module" << std::endl;
+        module->run();
+    }
 
     // Clear the display before returning to menu
     m_display->clear();
@@ -266,4 +274,34 @@ void MenuScreenModule::onScreenAction(const std::string& screenId,
     } else if (action == "item_activated") {
         // Handle item activation
     }
+}
+
+void MenuScreenModule::handleGPIORotation(int direction) {
+    if (m_menu) {
+        m_menu->handleRotation(direction);
+    }
+}
+
+bool MenuScreenModule::handleGPIOButtonPress() {
+    std::cout << "MenuScreenModule::handleGPIOButtonPress() called" << std::endl;
+
+    if (m_menu) {
+        std::cout << "Calling m_menu->handleButtonPress()" << std::endl;
+        m_menu->handleButtonPress();
+
+        std::cout << "After menu button press - exitToParent: " << m_exitToParent
+                  << ", exitToMainMenu: " << m_exitToMainMenu << std::endl;
+
+        // Check for exit conditions (same as the original handleInput logic)
+        if (m_exitToParent || m_exitToMainMenu) {
+            std::cout << "MenuScreenModule should exit!" << std::endl;
+            return false; // Exit the module
+        }
+
+        return true; // Continue running
+    }
+    return false; // Exit if no menu
+}
+void MenuScreenModule::setGPIOHandler(std::function<void(std::shared_ptr<ScreenModule>)> gpioHandler) {
+    m_gpioHandler = gpioHandler;
 }

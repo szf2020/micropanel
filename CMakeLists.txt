@@ -53,6 +53,7 @@ set(SOURCES_DEVICES
     src/devices/DisplayDevice.cpp
     src/devices/InputDevice.cpp
     src/devices/DeviceManager.cpp
+    src/devices/MultiInputDevice.cpp
 )
 
 set(SOURCES_MENU

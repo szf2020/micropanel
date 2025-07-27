@@ -13,6 +13,7 @@
 // Forward declarations
 class DisplayDevice;
 class InputDevice;
+class MultiInputDevice;
 class Display;
 class DeviceManager;
 class Menu;
@@ -46,6 +47,9 @@ private:
     // New methods for persistence and dependencies
     bool initPersistentStorage();
     bool loadModuleDependencies();
+    void runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module);
+    void simulateRotationForModule(std::shared_ptr<ScreenModule> module, int direction);
+    void simulateButtonPressForModule(std::shared_ptr<ScreenModule> module,bool& moduleRunning);
 
     struct {
         std::string inputDevice;
@@ -55,10 +59,12 @@ private:
         bool verboseMode = false;
         bool autoDetect = false;
         bool powerSaveEnabled = false;
+        bool useGPIOMode = false;
     } m_config;
 
     std::shared_ptr<DisplayDevice> m_displayDevice;
     std::shared_ptr<InputDevice> m_inputDevice;
+    std::shared_ptr<MultiInputDevice> m_multiInputDevice;
     std::shared_ptr<Display> m_display;
     std::shared_ptr<DeviceManager> m_deviceManager;
     std::shared_ptr<Menu> m_mainMenu;

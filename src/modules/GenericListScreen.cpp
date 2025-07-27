@@ -68,7 +68,7 @@ void GenericListScreen::setConfig(const nlohmann::json& config)
             if (item.contains("progress_title") && item["progress_title"].is_string()) {
                 listItem.progress_title = item["progress_title"].get<std::string>();
             }
-            
+
 	    if (item.contains("parse_progress") && item["parse_progress"].is_boolean()) {
                 listItem.parse_progress = item["parse_progress"].get<bool>();
             }
@@ -687,14 +687,14 @@ bool GenericListScreen::parseLogForCompletion()
         if (line.find("[ERROR]") != std::string::npos) {
             foundError = true;
         }
-        
+
 	// Check for RH850 MCU success patterns
         if (line.find("Flash verification successful") != std::string::npos ||
             line.find("Optionbyte verification successful") != std::string::npos) {
             foundSuccess = true;
         }
-        
-        // Check for RH850 MCU error patterns  
+
+        // Check for RH850 MCU error patterns
         if (line.find("Error") != std::string::npos ||
             line.find("Failed") != std::string::npos ||
             line.find("failed") != std::string::npos) {
@@ -739,13 +739,13 @@ std::string GenericListScreen::formatElapsedTime()
 int GenericListScreen::parseProgressFromLog()
 {
     if (m_asyncLogFile.empty()) return -1;
-    
+
     std::ifstream logFile(m_asyncLogFile);
     if (!logFile.is_open()) return -1;
-    
+
     std::string line;
     int lastPercentage = -1;
-    
+
     while (std::getline(logFile, line)) {
         // Look for percentage patterns like "14.7%" or "29.0%"
         size_t percentPos = line.find('%');
@@ -755,7 +755,7 @@ int GenericListScreen::parseProgressFromLog()
             while (start > 0 && (std::isdigit(line[start-1]) || line[start-1] == '.')) {
                 start--;
             }
-            
+
             if (start < percentPos) {
                 std::string percentStr = line.substr(start, percentPos - start);
                 try {
@@ -767,7 +767,71 @@ int GenericListScreen::parseProgressFromLog()
             }
         }
     }
-    
+
     logFile.close();
     return lastPercentage;
+}
+void GenericListScreen::handleGPIORotation(int direction) {
+    std::cout << "GenericListScreen GPIO rotation: " << direction << std::endl;
+
+    // Use the same navigation logic as handleInput()
+    int oldSelection = m_selectedIndex;
+
+    if (direction < 0) {
+        // Move up
+        if (m_selectedIndex > 0) {
+            m_selectedIndex--;
+        }
+    } else {
+        // Move down
+        if (m_selectedIndex < static_cast<int>(m_items.size() - 1)) {
+            m_selectedIndex++;
+        }
+    }
+
+    // Handle scrolling for long lists (same as handleInput)
+    if (m_selectedIndex < m_firstVisibleItem) {
+        m_firstVisibleItem = m_selectedIndex;
+    } else if (m_selectedIndex >= m_firstVisibleItem + m_maxVisibleItems) {
+        m_firstVisibleItem = m_selectedIndex - m_maxVisibleItems + 1;
+    }
+
+    // Only redraw if selection changed (same as handleInput)
+    if (oldSelection != m_selectedIndex) {
+        renderList();
+    }
+
+    m_display->updateActivityTimestamp();
+}
+
+bool GenericListScreen::handleGPIOButtonPress() {
+    std::cout << "GenericListScreen GPIO button press - selecting item" << std::endl;
+
+    // Use the same selection logic as handleInput()
+    if (m_selectedIndex >= 0 && m_selectedIndex < static_cast<int>(m_items.size())) {
+        const auto& selectedItem = m_items[m_selectedIndex];
+
+        // Handle "Back" item (same as handleInput)
+        if (selectedItem.title == "Back" || selectedItem.title == "back" || selectedItem.title == "BACK") {
+            m_shouldExit = true;
+            return false; // Exit the module
+        }
+
+        if (selectedItem.async) {
+            startAsyncProcess(selectedItem);
+        } else {
+            // Execute action if defined (same as handleInput)
+            if (!selectedItem.action.empty()) {
+                executeAction(selectedItem.action);
+                // Call callback immediately if needed
+                if (m_callback && !m_callbackAction.empty() && !m_notifyOnExit) {
+                    notifyCallback(m_callbackAction, m_selectedValue);
+                }
+                renderList(); // Redraw after action
+            }
+        }
+    }
+
+    m_display->updateActivityTimestamp();
+    return !m_shouldExit; // Continue running unless we should exit
 }

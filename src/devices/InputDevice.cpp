@@ -13,8 +13,10 @@ InputDevice::InputDevice(const std::string& devicePath)
     : DeviceInterface(devicePath)
 {
     // Initialize state
-    //memset(&m_state, 0, sizeof(m_state));
     m_state = {};
+
+    // Initialize keyboard synthesis state
+    m_keyboardState = {};
 }
 
 InputDevice::~InputDevice()
@@ -153,6 +155,13 @@ int InputDevice::waitForEvents(int timeoutMs)
     return ret;
 }
 
+// NEW: Process pending keyboard synthesis events (simplified - no longer needed for single events)
+void InputDevice::processKeyboardSynthesis(std::function<void(int)> onRotation)
+{
+    // NOTE: Currently not used since we switched to single events for keyboards
+    // Keeping the function for future use if needed
+    (void)onRotation; // Suppress unused parameter warning
+}
 
 bool InputDevice::processEvents(std::function<void(int)> onRotation, std::function<void()> onButtonPress)
 {
@@ -160,6 +169,9 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
         std::cerr << "Input device not open in processEvents" << std::endl;
         return false;
     }
+
+    // First, process any pending keyboard synthesis events
+    processKeyboardSynthesis(onRotation);
 
     struct input_event ev;
     int eventCount = 0;
@@ -180,8 +192,73 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
             continue;
         }
 
-        // Process based on event type
-        if (ev.type == EV_REL && ev.code == REL_X) {
+        // Handle EV_KEY events (both keyboard keys and mouse buttons)
+        if (ev.type == EV_KEY) {
+            // Handle BTN_LEFT (RP2040 enter button) - EXISTING FUNCTIONALITY
+            if (ev.code == BTN_LEFT && ev.value == 1) {
+                // Mouse left button press (value 1 = pressed) - EXISTING
+                std::cout << "BTN_LEFT press detected (RP2040 enter button)" << std::endl;
+                btnPress = 1;
+                eventCount++;
+            }
+            // NEW: Handle keyboard keys - only process key press events (value == 1)
+            else if (ev.value == 1) {
+                gettimeofday(&now, nullptr);
+
+                switch (ev.code) {
+                    case KEY_LEFT: // 105
+                        std::cout << "KEY_LEFT press detected - sending single REL_X event" << std::endl;
+                        // Send single event immediately (no dual events for keyboard)
+                        if (onRotation) {
+                            onRotation(-5);
+                        }
+                        eventCount++;
+                        break;
+
+                    case KEY_RIGHT: // 106
+                        std::cout << "KEY_RIGHT press detected - sending single REL_X event" << std::endl;
+                        // Send single event immediately (no dual events for keyboard)
+                        if (onRotation) {
+                            onRotation(5);
+                        }
+                        eventCount++;
+                        break;
+
+                    case KEY_UP: // 103
+                        std::cout << "KEY_UP press detected - sending single REL_Y event" << std::endl;
+                        // Send single event immediately (no dual events for keyboard)
+                        if (onRotation) {
+                            onRotation(-5);  // UP moves menu selection up
+                        }
+                        eventCount++;
+                        break;
+
+                    case KEY_DOWN: // 108
+                        std::cout << "KEY_DOWN press detected - sending single REL_Y event" << std::endl;
+                        // Send single event immediately (no dual events for keyboard)
+                        if (onRotation) {
+                            onRotation(5);   // DOWN moves menu selection down
+                        }
+                        eventCount++;
+                        break;
+
+                    case KEY_ENTER: // 28
+                        std::cout << "KEY_ENTER press detected" << std::endl;
+                        btnPress = 1;
+                        eventCount++;
+                        break;
+
+                    default:
+                        // Ignore other keys
+                        break;
+                }
+            }
+            // Continue to next event
+            continue;
+        }
+
+        // EXISTING: Process relative movement events (rotary encoder)
+        else if (ev.type == EV_REL && ev.code == REL_X) {
             //std::cout << "Rotary encoder movement detected! Value: " << ev.value << std::endl;
 
             // Get current time
@@ -247,12 +324,8 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
 
             eventCount++;
         }
-        else if (ev.type == EV_KEY && ev.code == BTN_LEFT && ev.value == 1) {
-            // Mouse left button press (value 1 = pressed)
-            //std::cout << "Button press detected!" << std::endl;
-            btnPress = 1;
-            eventCount++;
-        }
+        // Remove the duplicate BTN_LEFT handling since it's now handled above
+        // (The old BTN_LEFT handling code was here but is now moved up to the EV_KEY section)
 
         // Avoid processing too many events at once
         if (eventCount >= Config::MAX_EVENTS_PER_ITERATION) {
@@ -272,11 +345,12 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
         onButtonPress();
     }
 
+    // EXISTING: Handle relative movement processing
     // Now we handle the movement only if:
     // 1. We've received 2 or more events (paired_event_count >= 2), which means we've seen both events from one rotation
     // 2. OR if it's been more than 30ms since the last event, which means we might not get a paired event
     gettimeofday(&now, nullptr);
-    long timeSinceLastMs = (now.tv_sec - m_state.lastEventTime.tv_sec) * 1000 +
+    long timeSinceLastMs = (m_state.lastEventTime.tv_sec - m_state.lastEventTime.tv_sec) * 1000 +
                          (now.tv_usec - m_state.lastEventTime.tv_usec) / 1000;
 
     if ((pendingMovement || pendingVerticalMovement) &&
@@ -286,7 +360,7 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
             //std::cout << "Calling rotation callback with value: " << m_state.totalRelX << std::endl;
             onRotation(m_state.totalRelX);
         }
-        
+
         // Process vertical movement (REL_Y)
         // For vertical movement, we invert the value as up should be positive (REL_Y is negative for up)
         if (m_state.totalRelY != 0 && onRotation) {

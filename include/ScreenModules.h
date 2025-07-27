@@ -555,6 +555,8 @@ public:
     int calculateProgressPercentage();
     std::string formatElapsedTime();
     int parseProgressFromLog();
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
 
     //callback
     void setCallback(ScreenCallback* callback) { m_callback = callback; }

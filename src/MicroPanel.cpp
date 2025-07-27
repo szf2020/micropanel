@@ -1,6 +1,7 @@
 #include "MicroPanel.h"
 #include "Config.h"
 #include "DeviceInterfaces.h"
+#include "MultiInputDevice.h"
 #include "MenuSystem.h"
 #include "ScreenModules.h"
 #include "MenuScreenModule.h"
@@ -34,15 +35,15 @@ MicroPanel::MicroPanel(int argc, char* argv[])
 {
     // Set static instance for signal handler
     s_instance = this;
-    m_running=true; 
-    setupSignalHandlers(); 
+    m_running=true;
+    setupSignalHandlers();
     // Default configuration
     m_config.inputDevice = Config::DEFAULT_INPUT_DEVICE;
     m_config.serialDevice = Config::DEFAULT_SERIAL_DEVICE;
     m_config.verboseMode = false;
     m_config.autoDetect = false;
     m_config.powerSaveEnabled = false;
-    
+
     // Parse command line arguments
     parseCommandLine(argc, argv);
 }
@@ -63,7 +64,14 @@ void MicroPanel::parseCommandLine(int argc, char* argv[])
         switch (opt) {
             case 'i':
                 m_config.inputDevice = optarg;
-                m_config.autoDetect = false;  // Disable auto-detect when specific device is provided
+                if (std::string(optarg) == "gpio") {
+                    m_config.useGPIOMode = true;
+                    m_config.autoDetect = false;
+                    Logger::info("GPIO multi-device mode enabled");
+                } else {
+                    m_config.autoDetect = false;  // Disable auto-detect when specific device is provided
+                }
+		//m_config.autoDetect = false;  // Disable auto-detect when specific device is provided
                 break;
             case 's':
                 m_config.serialDevice = optarg;
@@ -102,6 +110,7 @@ void MicroPanel::parseCommandLine(int argc, char* argv[])
                 std::cout << "Usage: " << argv[0] << " [OPTIONS]\n\n";
                 std::cout << "Options:\n";
                 std::cout << "  -i DEVICE   Specify input device (default: auto-detect)\n";
+                std::cout << "              Use 'gpio' for GPIO button auto-detection\n";
                 std::cout << "  -s DEVICE   Specify serial device for display (default: auto-detect)\n";
                 std::cout << "  -c FILE     Specify JSON configuration file for screen modules\n";
                 std::cout << "  -a          Auto-detect HMI device (enabled by default)\n";
@@ -171,15 +180,54 @@ bool MicroPanel::initialize()
         }
     }
 
-    // Initialize devices
-    m_displayDevice = std::make_shared<DisplayDevice>(m_config.serialDevice);
-    m_inputDevice = std::make_shared<InputDevice>(m_config.inputDevice);
 
+    // Initialize devices
+    //m_displayDevice = std::make_shared<DisplayDevice>(m_config.serialDevice);
+    //m_inputDevice = std::make_shared<InputDevice>(m_config.inputDevice);
     // Open devices
+    //if (!m_inputDevice->open()) {
+    //    std::cerr << "Failed to open input device: " << m_config.inputDevice << std::endl;
+    //    return false;
+    //}
+
+// Initialize devices
+m_displayDevice = std::make_shared<DisplayDevice>(m_config.serialDevice);
+
+// NEW: Handle GPIO mode vs traditional mode
+if (m_config.useGPIOMode) {
+    std::cout << "Initializing GPIO multi-device mode..." << std::endl;
+
+    // Create MultiInputDevice for GPIO buttons
+    m_multiInputDevice = std::make_unique<MultiInputDevice>();
+    if (!m_multiInputDevice->open()) {
+        std::cerr << "Failed to open GPIO input devices. Make sure GPIO buttons are configured." << std::endl;
+        std::cerr << "Check: dmesg | grep button" << std::endl;
+        return false;
+    }
+
+    // Create dummy InputDevice for modules that expect it
+    //m_inputDevice = std::make_shared<InputDevice>("/dev/null");
+// Create a properly working InputDevice for modules
+// Use the first available input device or event0 as fallback
+std::string fallbackDevice = "/dev/input/event0";
+if (!m_config.inputDevice.empty() && m_config.inputDevice != "gpio") {
+    fallbackDevice = m_config.inputDevice;
+}
+m_inputDevice = std::make_shared<InputDevice>(fallbackDevice);
+if (!m_inputDevice->open()) {
+    std::cout << "Warning: Failed to open fallback input device for modules" << std::endl;
+}
+
+
+} else {
+    // Traditional mode
+    m_inputDevice = std::make_shared<InputDevice>(m_config.inputDevice);
     if (!m_inputDevice->open()) {
         std::cerr << "Failed to open input device: " << m_config.inputDevice << std::endl;
         return false;
     }
+}
+
 
     if (!m_displayDevice->open()) {
         std::cerr << "Failed to open display device: " << m_config.serialDevice << std::endl;
@@ -200,21 +248,21 @@ bool MicroPanel::initialize()
 
     // Initialize modules
     initializeModules();
-    
+
     // Initialize persistent storage if config file is provided
     if (!m_config.configFile.empty()) {
         if (!initPersistentStorage()) {
             Logger::warning("Failed to initialize persistent storage");
             // Continue anyway, persistent storage will be unavailable
         }
-        
+
         // Load module dependencies
         if (!loadModuleDependencies()) {
             Logger::warning("Failed to load module dependencies");
             // Continue anyway, dependencies will be unavailable
         }
     }
-    
+
     // Set up menu based on config file or default setup
     if (!m_config.configFile.empty()) {
         if (!loadConfigFromJson()) {
@@ -478,25 +526,67 @@ void MicroPanel::initializeModules()
     m_modules["ping"] = std::make_shared<IPPingScreen>(m_display, m_inputDevice);
     m_modules["netinfo"] = std::make_shared<NetInfoScreen>(m_display, m_inputDevice);
     m_modules["netsettings"] = std::make_shared<NetSettingsScreen>(m_display, m_inputDevice);
-    m_modules["speedtest"] = std::make_shared<SpeedTestScreen>(m_display, m_inputDevice); 
-    //m_modules["throughputtest"] = std::make_shared<ThroughputTestScreen>(m_display, m_inputDevice); 
-    m_modules["throughputserver"] = std::make_shared<ThroughputServerScreen>(m_display, m_inputDevice); 
+    m_modules["speedtest"] = std::make_shared<SpeedTestScreen>(m_display, m_inputDevice);
+    //m_modules["throughputtest"] = std::make_shared<ThroughputTestScreen>(m_display, m_inputDevice);
+    m_modules["throughputserver"] = std::make_shared<ThroughputServerScreen>(m_display, m_inputDevice);
     m_modules["throughputclient"] = std::make_shared<ThroughputClientScreen>(m_display, m_inputDevice);
     Logger::debug("Module initialization complete - " + std::to_string(m_modules.size()) + " modules available");
 }
-
-// New helper method to register a module in the menu
+/*
 void MicroPanel::registerModuleInMenu(const std::string& moduleName, const std::string& menuTitle) {
     m_mainMenu->addItem(std::make_shared<ActionMenuItem>(menuTitle, [this, moduleName]() {
         std::cout << "Executing action for module: " << moduleName << std::endl;
         auto module = std::dynamic_pointer_cast<ScreenModule>(m_modules[moduleName]);
         if (module) {
-       	    // Clear main menu flag if this is a menu module
+            // Clear main menu flag if this is a menu module
             auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
             if (menuModule) {
                 menuModule->clearMainMenuFlag();
             }
-	    module->run();
+
+            // Use GPIO input for module execution
+            if (m_config.useGPIOMode) {
+                runModuleWithGPIOInput(module);
+            } else {
+                module->run();
+            }
+
+            // Explicitly redraw the main menu when returning
+            m_display->clear();
+            usleep(Config::DISPLAY_CMD_DELAY * 5);
+            m_mainMenu->render();
+        } else {
+            Logger::error("Failed to execute module: " + moduleName);
+        }
+    }));
+}
+*/
+void MicroPanel::registerModuleInMenu(const std::string& moduleName, const std::string& menuTitle) {
+    m_mainMenu->addItem(std::make_shared<ActionMenuItem>(menuTitle, [this, moduleName]() {
+        std::cout << "Executing action for module: " << moduleName << std::endl;
+        auto module = std::dynamic_pointer_cast<ScreenModule>(m_modules[moduleName]);
+        if (module) {
+            // Clear main menu flag if this is a menu module
+            auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
+            if (menuModule) {
+                menuModule->clearMainMenuFlag();
+
+                // NEW: Configure menu module for GPIO mode
+                if (m_config.useGPIOMode) {
+                    menuModule->setUseGPIOMode(true);
+                    menuModule->setGPIOHandler([this](std::shared_ptr<ScreenModule> submodule) {
+                        this->runModuleWithGPIOInput(submodule);
+                    });
+                }
+            }
+
+            // Use GPIO input for ALL module execution in GPIO mode
+            if (m_config.useGPIOMode) {
+                runModuleWithGPIOInput(module);
+            } else {
+                module->run();
+            }
+
             // Explicitly redraw the main menu when returning
             m_display->clear();
             usleep(Config::DISPLAY_CMD_DELAY * 5);
@@ -632,19 +722,54 @@ void MicroPanel::run()
             break;
         }
 
+
+
         // Process input
-        if (m_inputDevice->waitForEvents(100) > 0) {
-            m_inputDevice->processEvents(
-                [this](int direction) {
+        //if (m_inputDevice->waitForEvents(100) > 0) {
+        //   m_inputDevice->processEvents(
+        //        [this](int direction) {
                     // Handle rotation
-                    m_mainMenu->handleRotation(direction);
-                },
-                [this]() {
+        //            m_mainMenu->handleRotation(direction);
+        //        },
+        //        [this]() {
                     // Handle button press
-                    m_mainMenu->handleButtonPress();
-                }
-            );
-        }
+        //            m_mainMenu->handleButtonPress();
+        //        }
+        //    );
+        //}
+
+// Process input (NEW: handle GPIO vs traditional mode)
+if (m_config.useGPIOMode) {
+    // Use MultiInputDevice for GPIO mode
+    if (m_multiInputDevice && m_multiInputDevice->waitForEvents(100) > 0) {
+        m_multiInputDevice->processEvents(
+            [this](int direction) {
+                // Handle rotation
+                m_mainMenu->handleRotation(direction);
+            },
+            [this]() {
+                // Handle button press
+                m_mainMenu->handleButtonPress();
+            }
+        );
+    }
+} else {
+    // Use traditional InputDevice
+    if (m_inputDevice->waitForEvents(100) > 0) {
+        m_inputDevice->processEvents(
+            [this](int direction) {
+                // Handle rotation
+                m_mainMenu->handleRotation(direction);
+            },
+            [this]() {
+                // Handle button press
+                m_mainMenu->handleButtonPress();
+            }
+        );
+    }
+}
+
+
 
         // Check for power save timeout
         if (m_config.powerSaveEnabled) {
@@ -672,7 +797,7 @@ void MicroPanel::shutdown()
 {
     // Stop disconnection monitor
     m_deviceManager->stopDisconnectionMonitor();
-    
+
     // Display shutdown message
     if (m_display && m_displayDevice->isOpen()) {
         m_display->clear();
@@ -681,24 +806,24 @@ void MicroPanel::shutdown()
         m_display->drawText(0, 0, "Rebooting.....");
         usleep(Config::DISPLAY_CMD_DELAY * 10);
     }
-    
+
     // Close devices
     if (m_inputDevice) {
         m_inputDevice->close();
     }
-    
+
     if (m_displayDevice) {
         m_displayDevice->close();
     }
-    
+
     // Clear module registry
     m_modules.clear();
-    
+
     // Clear menu
     if (m_mainMenu) {
         m_mainMenu->clear();
     }
-    
+
     std::cout << "MicroPanel shutdown complete" << std::endl;
 }
 
@@ -706,14 +831,14 @@ void MicroPanel::shutdown()
 int main(int argc, char* argv[])
 {
     MicroPanel app(argc, argv);
-    
+
     if (!app.initialize()) {
         return EXIT_FAILURE;
     }
-    
+
     app.run();
     app.shutdown();
-    
+
     return EXIT_SUCCESS;
 }
 
@@ -724,7 +849,7 @@ bool MicroPanel::initPersistentStorage() {
         Logger::warning("No persistent data file specified");
         return false;
     }
-    
+
     auto& storage = PersistentStorage::getInstance();
     return storage.initialize(m_config.persistentDataFile);
 }
@@ -738,10 +863,10 @@ bool MicroPanel::loadModuleDependencies() {
             Logger::error("Could not open config file: " + m_config.configFile);
             return false;
         }
-        
+
         // Parse JSON
         json config = json::parse(configFile);
-        
+
         // Load dependencies
         auto& dependencies = ModuleDependency::getInstance();
         return dependencies.loadDependencies(config);
@@ -750,3 +875,193 @@ bool MicroPanel::loadModuleDependencies() {
         return false;
     }
 }
+
+
+// NEW: Method to run modules with GPIO input handling
+void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
+    std::cout << "Running module with GPIO input..." << std::endl;
+
+    // Check what type of module this is
+    auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
+    auto brightnessModule = std::dynamic_pointer_cast<BrightnessScreen>(module);
+
+    if (menuModule) {
+        std::cout << "Module type: MenuScreenModule (ID: " << menuModule->getModuleId() << ")" << std::endl;
+    } else if (brightnessModule) {
+        std::cout << "Module type: BrightnessScreen" << std::endl;
+    } else {
+        std::cout << "Module type: Generic ScreenModule" << std::endl;
+    }
+
+    // Enter the module
+    std::cout << "Entering module..." << std::endl;
+    module->enter();
+    std::cout << "Module entered successfully" << std::endl;
+
+    bool moduleRunning = true;
+    int loopCount = 0;
+
+    while (moduleRunning && m_running) {
+        loopCount++;
+        if (loopCount % 100 == 0) {  // Log every 100 loops to avoid spam
+            std::cout << "Module loop: " << loopCount << std::endl;
+        }
+
+        // Process GPIO input
+        if (m_multiInputDevice && m_multiInputDevice->waitForEvents(100) > 0) {
+            m_multiInputDevice->processEvents(
+                [&](int direction) {
+                    std::cout << "GPIO rotation in module: " << direction << std::endl;
+                    simulateRotationForModule(module, direction);
+                },
+                [&]() {
+                    std::cout << "GPIO button press in module" << std::endl;
+
+                    // Handle button press differently for menu vs non-menu modules
+                    if (menuModule) {
+                        // For menu modules, simulate button press to trigger menu selection
+                        std::cout << "Processing menu button press" << std::endl;
+                        simulateButtonPressForModule(module,moduleRunning);
+                    //} else {
+                        // For non-menu modules, button press exits
+                    //    std::cout << "Exiting non-menu module" << std::endl;
+                    //    moduleRunning = false;
+                    //}
+		   } else {
+		    // For non-menu modules, check if it's GenericListScreen
+		    auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
+		    if (genericListModule) {
+		        std::cout << "Processing GenericListScreen button press" << std::endl;
+		        if (!genericListModule->handleGPIOButtonPress()) {
+		            moduleRunning = false;
+		        }
+		    } else {
+		        // For other non-menu modules, button press exits
+		        std::cout << "Exiting non-menu module" << std::endl;
+		        moduleRunning = false;
+		    }
+		}
+                }
+            );
+        }
+
+        // Update the module (this is important for display updates)
+        try {
+            module->update();
+        } catch (const std::exception& e) {
+            std::cout << "Exception in module update: " << e.what() << std::endl;
+            moduleRunning = false;
+        }
+
+        // Small delay
+        usleep(Config::MAIN_LOOP_DELAY);
+    }
+
+    // Exit the module
+    std::cout << "Exiting module..." << std::endl;
+    module->exit();
+    std::cout << "Module exited successfully" << std::endl;
+}
+
+
+// NEW: Helper method to simulate rotation for different module types
+void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module, int direction) {
+    // Handle MenuScreenModule - this covers ALL menu-type modules!
+    auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
+    if (menuModule) {
+        std::cout << "Navigating menu: " << direction << std::endl;
+        menuModule->handleGPIORotation(direction);  // This will actually work now!
+        return;
+    }
+
+    // For BrightnessScreen - adjust brightness directly
+    auto brightnessModule = std::dynamic_pointer_cast<BrightnessScreen>(module);
+    if (brightnessModule) {
+        std::cout << "Adjusting brightness: " << direction << std::endl;
+        int currentBrightness = m_display->getBrightness();
+
+        if (direction < 0) {
+            // Decrease brightness (UP button)
+            currentBrightness -= 10;
+            if (currentBrightness < 0) currentBrightness = 0;
+        } else {
+            // Increase brightness (DOWN button)
+            currentBrightness += 10;
+            if (currentBrightness > 255) currentBrightness = 255;
+        }
+
+        // Calculate percentage (0-255 -> 0-100%)
+        int percentage = (currentBrightness * 100) / 255;
+
+        // Clear the previous text area first
+        m_display->drawText(50, 20, "    ");
+        usleep(Config::DISPLAY_CMD_DELAY);
+
+        // Format and draw new value
+        char text[16];
+        snprintf(text, sizeof(text), "%d%%", percentage);
+        m_display->drawText(50, 20, text);
+        usleep(Config::DISPLAY_CMD_DELAY);
+
+        // Update progress bar
+        m_display->drawProgressBar(10, 30, 108, 15, percentage);
+
+        // Set the actual display brightness
+        m_display->setBrightness(currentBrightness);
+
+        return;
+    }
+
+    // Add support for GenericListScreen modules (insert before the default case)
+    auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
+    if (genericListModule) {
+       std::cout << "Navigating GenericListScreen: " << direction << std::endl;
+       genericListModule->handleGPIORotation(direction);
+       return;
+    }
+}
+void MicroPanel::simulateButtonPressForModule(std::shared_ptr<ScreenModule> module, bool& moduleRunning) {
+    auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
+    if (menuModule) {
+        std::cout << "Simulating menu button press - selecting menu item" << std::endl;
+        if (!menuModule->handleGPIOButtonPress()) {
+            moduleRunning = false; // Exit if menu returns false
+        }
+        return;
+    }
+
+    auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
+    if (genericListModule) {
+        std::cout << "GenericListScreen button press - selecting item" << std::endl;
+        if (!genericListModule->handleGPIOButtonPress()) {
+            // If the method returns false, exit the module
+            moduleRunning = false;
+        }
+        return;
+    }
+
+    // For other module types, button press typically exits
+    std::cout << "Button press for non-menu module" << std::endl;
+    moduleRunning = false;
+}
+
+// NEW: Helper method to simulate button press for different module types
+/*void MicroPanel::simulateButtonPressForModule(std::shared_ptr<ScreenModule> module) {
+    auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
+    if (menuModule) {
+        std::cout << "Simulating menu button press - selecting menu item" << std::endl;
+        menuModule->handleGPIOButtonPress();  // This will select the current menu item!
+        return;
+    }
+    auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
+    if (genericListModule) {
+    std::cout << "GenericListScreen button press - selecting item" << std::endl;
+    if (!genericListModule->handleGPIOButtonPress()) {
+        // If the method returns false, exit the module
+        //moduleRunning = false;
+        }
+        return;
+    }
+    // For other module types, button press typically exits
+    std::cout << "Button press for non-menu module" << std::endl;
+}*/

@@ -126,6 +126,11 @@ printf "Configuring micropanel service.......................... "
 # Get paths for binary and config
 BINARY_PATH="$CURRENT_PATH/build/micropanel"
 
+#for pios, use local gpio-keys and i2c for driving ssd1306
+if [ "$TYPE" = "pios" ]; then
+    PIOS_ARGS="-i gpio -s /dev/i2c-1 "
+fi
+
 # Update the service file with correct paths
 SERVICE_FILE="$CURRENT_PATH/micropanel.service"
 if [ -f "$SERVICE_FILE" ]; then
@@ -141,7 +146,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=$BINARY_PATH -c $CONFIG_FILE 1>/tmp/micropanel.log 2>/tmp/micropanel.log
+ExecStart=$BINARY_PATH $PIOS_ARGS -c $CONFIG_FILE 1>/tmp/micropanel.log 2>/tmp/micropanel.log
 Restart=on-failure
 RestartSec=5
 

@@ -11,6 +11,7 @@
 #include <sys/time.h>
 
 // Forward declarations
+class BaseDisplayDevice;
 class DisplayDevice;
 class InputDevice;
 class MultiInputDevice;
@@ -78,4 +79,6 @@ private:
     // Signal handling
     static MicroPanel* s_instance;
     static void signalHandler(int signal);
+    std::shared_ptr<BaseDisplayDevice> createDisplayDevice(const std::string& devicePath);
+    std::shared_ptr<BaseDisplayDevice> m_baseDisplayDevice;
 };

@@ -198,7 +198,7 @@ int MultiInputDevice::getDeviceKeycode(const std::string& devicePath) {
         int byte_index = keycode / (8 * sizeof(long));
         int bit_index = keycode % (8 * sizeof(long));
         
-        if (byte_index < (KEY_MAX/8/sizeof(long) + 1) && 
+        if (byte_index < static_cast<int>(KEY_MAX/8/sizeof(long) + 1) && 
             (keybit[byte_index] & (1UL << bit_index))) {
             std::cout << "DEBUG: Device " << devicePath << " supports " << keynames[i] << " (" << keycode << ")" << std::endl;
             ::close(fd);
@@ -384,6 +384,7 @@ MultiInputDevice::DeviceType MultiInputDevice::detectDeviceType(const std::strin
     return DeviceType::BUTTON;
 }
 void MultiInputDevice::processRotaryEncoderEvent(GPIODevice& device, int relativeValue, std::function<void(int)> onRotation) {
+    (void)device; 
     if (!onRotation) return;
 
     // Apply ±5 scaling and direction mapping to match RP2040 behavior

@@ -4,7 +4,8 @@
 #include <unistd.h>
 #include <iostream>
 
-Display::Display(std::shared_ptr<DisplayDevice> device)
+// UPDATED: Constructor now accepts BaseDisplayDevice instead of DisplayDevice
+Display::Display(std::shared_ptr<BaseDisplayDevice> device)
     : m_device(device)
 {
     // Initialize the activity timestamp
@@ -82,11 +83,11 @@ void Display::setPower(bool on)
 void Display::enablePowerSave(bool enable)
 {
     m_powerSaveEnabled = enable;
-    
+
     // If enabling power save, initialize the activity timestamp
     if (enable) {
         gettimeofday(&m_lastActivityTime, nullptr);
-        
+
         // Make sure display is on initially
         if (!m_poweredOn) {
             setPower(true);
@@ -118,7 +119,7 @@ void Display::checkPowerSaveTimeout()
     long timeDiffSec = (now.tv_sec - m_lastActivityTime.tv_sec);
 
     if (timeDiffSec >= Config::POWER_SAVE_TIMEOUT_SEC) {
-        std::cout << "Power save timeout reached (" << timeDiffSec 
+        std::cout << "Power save timeout reached (" << timeDiffSec
                   << " seconds of inactivity)" << std::endl;
 
         // Turn off the display

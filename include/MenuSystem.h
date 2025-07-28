@@ -8,6 +8,7 @@
 #include "Config.h"
 
 // Forward declarations
+class BaseDisplayDevice;
 class Display;
 class DisplayDevice;
 class InputDevice;
@@ -78,7 +79,7 @@ private:
  */
 class Display {
 public:
-    Display(std::shared_ptr<DisplayDevice> device);
+    Display(std::shared_ptr<BaseDisplayDevice> device);
     
     // Pass-through display commands
     void clear();
@@ -106,7 +107,7 @@ public:
     bool isDisconnected() const;
     
 private:
-    std::shared_ptr<DisplayDevice> m_device;
+    std::shared_ptr<BaseDisplayDevice> m_device;
     bool m_inverted = false;
     int m_brightness = 128;
     bool m_poweredOn = true;

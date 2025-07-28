@@ -43,9 +43,34 @@ protected:
 };
 
 /**
- * Handles communication with the display via serial
+ * Base interface for display devices (serial and I2C)
  */
-class DisplayDevice : public DeviceInterface {
+class BaseDisplayDevice : public DeviceInterface {
+public:
+    BaseDisplayDevice(const std::string& devicePath) : DeviceInterface(devicePath) {}
+    virtual ~BaseDisplayDevice() = default;
+
+    // Pure virtual display commands that both serial and I2C must implement
+    virtual void clear() = 0;
+    virtual void drawText(int x, int y, const std::string& text) = 0;
+    virtual void setCursor(int x, int y) = 0;
+    virtual void setInverted(bool inverted) = 0;
+    virtual void setBrightness(int brightness) = 0;
+    virtual void drawProgressBar(int x, int y, int width, int height, int percentage) = 0;
+    virtual void setPower(bool on) = 0;
+
+    // Optional buffering interface (used by serial, may be used by I2C)
+    virtual void sendCommand(const uint8_t* data, size_t length) {(void)data; (void)length;}
+    virtual void bufferCommand(const uint8_t* data, size_t length) {(void)data; (void)length;}
+    virtual void flushBuffer() {}
+
+    virtual bool isDisconnected() const { return false; }
+};
+
+/**
+ * Handles communication with the display via serial (EXISTING - now inherits from BaseDisplayDevice)
+ */
+class DisplayDevice : public BaseDisplayDevice {
 public:
     DisplayDevice(const std::string& devicePath = Config::DEFAULT_SERIAL_DEVICE);
     ~DisplayDevice();
@@ -54,20 +79,20 @@ public:
     void close() override;
     bool checkConnection() const override;
 
-    void sendCommand(const uint8_t* data, size_t length);
-    void bufferCommand(const uint8_t* data, size_t length);
-    void flushBuffer();
+    void sendCommand(const uint8_t* data, size_t length) override;
+    void bufferCommand(const uint8_t* data, size_t length) override;
+    void flushBuffer() override;
 
     // Display specific commands
-    void clear();
-    void drawText(int x, int y, const std::string& text);
-    void setCursor(int x, int y);
-    void setInverted(bool inverted);
-    void setBrightness(int brightness);
-    void drawProgressBar(int x, int y, int width, int height, int percentage);
-    void setPower(bool on);
+    void clear() override;
+    void drawText(int x, int y, const std::string& text) override;
+    void setCursor(int x, int y) override;
+    void setInverted(bool inverted) override;
+    void setBrightness(int brightness) override;
+    void drawProgressBar(int x, int y, int width, int height, int percentage) override;
+    void setPower(bool on) override;
 
-    bool isDisconnected() const {
+    bool isDisconnected() const override {
         return m_disconnected;
     }
 
@@ -80,6 +105,84 @@ private:
 
     std::mutex m_mutex;
     std::atomic<bool> m_disconnected{false};
+};
+
+/**
+ * Font data for I2C display rendering
+ */
+class Font8x8 {
+public:
+    static const uint8_t font8x8_basic[128][8];
+};
+
+/**
+ * I2C-based SSD1306 display device  
+ */
+class I2CDisplayDevice : public BaseDisplayDevice {
+public:
+    I2CDisplayDevice(const std::string& devicePath = "/dev/i2c-1");
+    ~I2CDisplayDevice();
+
+    bool open() override;
+    void close() override;
+    bool checkConnection() const override;
+
+    // Display commands
+    void clear() override;
+    void drawText(int x, int y, const std::string& text) override;
+    void setCursor(int x, int y) override;
+    void setInverted(bool inverted) override;
+    void setBrightness(int brightness) override;
+    void drawProgressBar(int x, int y, int width, int height, int percentage) override;
+    void setPower(bool on) override;
+
+    bool isDisconnected() const override {
+        return m_disconnected.load();
+    }
+
+private:
+    static constexpr uint8_t SSD1306_ADDR = 0x3C;
+    static constexpr int DISPLAY_WIDTH = 128;
+    static constexpr int DISPLAY_HEIGHT = 64;
+    static constexpr int DISPLAY_PAGES = 8;
+
+    // SSD1306 Commands
+    static constexpr uint8_t SSD1306_SET_CONTRAST = 0x81;
+    static constexpr uint8_t SSD1306_DISPLAY_RAM = 0xA4;
+    static constexpr uint8_t SSD1306_DISPLAY_NORMAL = 0xA6;
+    static constexpr uint8_t SSD1306_DISPLAY_INVERTED = 0xA7;
+    static constexpr uint8_t SSD1306_DISPLAY_OFF = 0xAE;
+    static constexpr uint8_t SSD1306_DISPLAY_ON = 0xAF;
+    static constexpr uint8_t SSD1306_SET_DISPLAY_OFFSET = 0xD3;
+    static constexpr uint8_t SSD1306_SET_COM_PINS = 0xDA;
+    static constexpr uint8_t SSD1306_SET_VCOM_DETECT = 0xDB;
+    static constexpr uint8_t SSD1306_SET_DISPLAY_CLOCK_DIV = 0xD5;
+    static constexpr uint8_t SSD1306_SET_PRECHARGE = 0xD9;
+    static constexpr uint8_t SSD1306_SET_MULTIPLEX = 0xA8;
+    static constexpr uint8_t SSD1306_SET_START_LINE = 0x40;
+    static constexpr uint8_t SSD1306_MEMORY_MODE = 0x20;
+    static constexpr uint8_t SSD1306_COLUMN_ADDR = 0x21;
+    static constexpr uint8_t SSD1306_PAGE_ADDR = 0x22;
+    static constexpr uint8_t SSD1306_COM_SCAN_DEC = 0xC8;
+    static constexpr uint8_t SSD1306_SEG_REMAP_REVERSE = 0xA1;
+    static constexpr uint8_t SSD1306_CHARGE_PUMP = 0x8D;
+
+    // I2C communication
+    bool writeCommand(uint8_t command);
+    bool writeData(const uint8_t* data, size_t length);
+    bool initializeDisplay();
+
+    // Display buffer and cursor management
+    uint8_t m_displayBuffer[DISPLAY_WIDTH * DISPLAY_HEIGHT / 8];
+    uint8_t m_cursorX = 0;
+    uint8_t m_cursorY = 0;
+    bool m_inverted = false;
+    std::atomic<bool> m_disconnected{false};
+    std::mutex m_mutex;
+
+    // Font rendering
+    void drawCharacter(char c);
+    void updateDisplay(int startPage, int endPage, int startCol, int endCol);
 };
 
 /**

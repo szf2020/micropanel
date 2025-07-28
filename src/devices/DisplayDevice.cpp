@@ -9,7 +9,7 @@
 
 // Constructor
 DisplayDevice::DisplayDevice(const std::string& devicePath)
-    : DeviceInterface(devicePath)
+    : BaseDisplayDevice(devicePath)
 {
     m_cmdBuffer.used = 0;
     gettimeofday(&m_cmdBuffer.lastFlush, nullptr);

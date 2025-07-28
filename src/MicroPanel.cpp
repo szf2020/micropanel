@@ -190,11 +190,12 @@ bool MicroPanel::initialize()
     //    return false;
     //}
 
-// Initialize devices
-m_displayDevice = std::make_shared<DisplayDevice>(m_config.serialDevice);
+    // Initialize devices
+    //m_displayDevice = std::make_shared<DisplayDevice>(m_config.serialDevice);
+    m_baseDisplayDevice = createDisplayDevice(m_config.serialDevice);
 
-// NEW: Handle GPIO mode vs traditional mode
-if (m_config.useGPIOMode) {
+    // NEW: Handle GPIO mode vs traditional mode
+    if (m_config.useGPIOMode) {
     std::cout << "Initializing GPIO multi-device mode..." << std::endl;
 
     // Create MultiInputDevice for GPIO buttons
@@ -207,36 +208,36 @@ if (m_config.useGPIOMode) {
 
     // Create dummy InputDevice for modules that expect it
     //m_inputDevice = std::make_shared<InputDevice>("/dev/null");
-// Create a properly working InputDevice for modules
-// Use the first available input device or event0 as fallback
-std::string fallbackDevice = "/dev/input/event0";
-if (!m_config.inputDevice.empty() && m_config.inputDevice != "gpio") {
-    fallbackDevice = m_config.inputDevice;
-}
-m_inputDevice = std::make_shared<InputDevice>(fallbackDevice);
-if (!m_inputDevice->open()) {
-    std::cout << "Warning: Failed to open fallback input device for modules" << std::endl;
-}
-
-
-} else {
+    // Create a properly working InputDevice for modules
+    // Use the first available input device or event0 as fallback
+    std::string fallbackDevice = "/dev/input/event0";
+    if (!m_config.inputDevice.empty() && m_config.inputDevice != "gpio") {
+        fallbackDevice = m_config.inputDevice;
+    }
+    m_inputDevice = std::make_shared<InputDevice>(fallbackDevice);
+    if (!m_inputDevice->open()) {
+        std::cout << "Warning: Failed to open fallback input device for modules" << std::endl;
+    }
+    } else {
     // Traditional mode
     m_inputDevice = std::make_shared<InputDevice>(m_config.inputDevice);
     if (!m_inputDevice->open()) {
         std::cerr << "Failed to open input device: " << m_config.inputDevice << std::endl;
         return false;
     }
-}
+    }
 
 
-    if (!m_displayDevice->open()) {
+    if (!m_baseDisplayDevice->open()) {
         std::cerr << "Failed to open display device: " << m_config.serialDevice << std::endl;
-        m_inputDevice->close();
+        if (m_inputDevice)
+            m_inputDevice->close();
         return false;
     }
 
     // Create display wrapper
-    m_display = std::make_shared<Display>(m_displayDevice);
+    //m_display = std::make_shared<Display>(m_displayDevice);
+    m_display = std::make_shared<Display>(m_baseDisplayDevice);
 
     // Configure power save if enabled
     if (m_config.powerSaveEnabled) {
@@ -651,7 +652,7 @@ void MicroPanel::run()
     while (m_running) {
         // Check if device was disconnected
         if (m_deviceManager->isDeviceDisconnected() ||
-            m_display->isDisconnected()) {
+            (m_baseDisplayDevice && m_baseDisplayDevice->isDisconnected())) {
             std::cout << "Device disconnection detected!" << std::endl;
 
             if (m_config.autoDetect) {
@@ -663,8 +664,8 @@ void MicroPanel::run()
                     m_inputDevice->close();
                 }
 
-                if (m_displayDevice) {
-                    m_displayDevice->close();
+                if (m_baseDisplayDevice) {
+                    m_baseDisplayDevice->close();
                 }
 
                 // Stop the disconnection monitor while we wait for reconnection
@@ -685,13 +686,14 @@ void MicroPanel::run()
 
                         // Create and open new devices
                         m_inputDevice = std::make_shared<InputDevice>(m_config.inputDevice);
-                        m_displayDevice = std::make_shared<DisplayDevice>(m_config.serialDevice);
+                        //m_displayDevice = std::make_shared<DisplayDevice>(m_config.serialDevice);
+			m_baseDisplayDevice = createDisplayDevice(m_config.serialDevice);
 
-                        if (m_inputDevice->open() && m_displayDevice->open()) {
+                        if (m_inputDevice->open() && m_baseDisplayDevice->open()) {
                             std::cout << "Successfully opened reconnected devices" << std::endl;
 
                             // Update display and redraw menu
-                            m_display = std::make_shared<Display>(m_displayDevice);
+                            m_display = std::make_shared<Display>(m_baseDisplayDevice);
                             if (m_config.powerSaveEnabled) {
                                 m_display->enablePowerSave(true);
                             }
@@ -785,7 +787,7 @@ if (m_config.useGPIOMode) {
 
         // Flush command buffer at regular intervals
         if (timeSinceFlush > Config::CMD_BUFFER_FLUSH_INTERVAL) {
-            m_displayDevice->flushBuffer();
+            m_baseDisplayDevice->flushBuffer();
             lastBufferFlush = now;
         }
 
@@ -799,7 +801,7 @@ void MicroPanel::shutdown()
     m_deviceManager->stopDisconnectionMonitor();
 
     // Display shutdown message
-    if (m_display && m_displayDevice->isOpen()) {
+    if (m_display && m_baseDisplayDevice && m_baseDisplayDevice->isOpen()) {
         m_display->clear();
         usleep(Config::DISPLAY_CMD_DELAY);
         //m_display->drawText(0, 0, "Daemon stopped");
@@ -812,8 +814,8 @@ void MicroPanel::shutdown()
         m_inputDevice->close();
     }
 
-    if (m_displayDevice) {
-        m_displayDevice->close();
+    if (m_baseDisplayDevice) {
+        m_baseDisplayDevice->close();
     }
 
     // Clear module registry
@@ -1044,24 +1046,27 @@ void MicroPanel::simulateButtonPressForModule(std::shared_ptr<ScreenModule> modu
     std::cout << "Button press for non-menu module" << std::endl;
     moduleRunning = false;
 }
+std::shared_ptr<BaseDisplayDevice> MicroPanel::createDisplayDevice(const std::string& devicePath) {
+    std::cout << "Creating display device for: " << devicePath << std::endl;
 
-// NEW: Helper method to simulate button press for different module types
-/*void MicroPanel::simulateButtonPressForModule(std::shared_ptr<ScreenModule> module) {
-    auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
-    if (menuModule) {
-        std::cout << "Simulating menu button press - selecting menu item" << std::endl;
-        menuModule->handleGPIOButtonPress();  // This will select the current menu item!
-        return;
+    // Detect device type based on path
+    if (devicePath.find("/dev/i2c-") == 0) {
+        std::cout << "I2C display detected but not yet implemented: " << devicePath << std::endl;
+        std::cout << "Falling back to serial mode for now" << std::endl;
+        return std::make_shared<DisplayDevice>("/dev/ttyACM0"); // Fallback
+        
+        // I2C device path detected
+        //std::cout << "Detected I2C display device: " << devicePath << std::endl;
+        //return std::make_shared<I2CDisplayDevice>(devicePath);
+    } 
+    else if (devicePath.find("/dev/ttyACM") == 0 || devicePath.find("/dev/ttyUSB") == 0) {
+        // Serial device path detected  
+        std::cout << "Detected serial display device: " << devicePath << std::endl;
+        return std::make_shared<DisplayDevice>(devicePath);
     }
-    auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
-    if (genericListModule) {
-    std::cout << "GenericListScreen button press - selecting item" << std::endl;
-    if (!genericListModule->handleGPIOButtonPress()) {
-        // If the method returns false, exit the module
-        //moduleRunning = false;
-        }
-        return;
+    else {
+        // Default to serial for backward compatibility
+        std::cout << "Unknown device type, defaulting to serial: " << devicePath << std::endl;
+        return std::make_shared<DisplayDevice>(devicePath);
     }
-    // For other module types, button press typically exits
-    std::cout << "Button press for non-menu module" << std::endl;
-}*/
+}

@@ -51,6 +51,7 @@ set(SOURCES_PERSISTENCE
 # Define source files by directory
 set(SOURCES_DEVICES
     src/devices/DisplayDevice.cpp
+    src/devices/Font8x8.cpp
     src/devices/InputDevice.cpp
     src/devices/DeviceManager.cpp
     src/devices/MultiInputDevice.cpp

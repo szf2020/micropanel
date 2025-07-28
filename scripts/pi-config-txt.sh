@@ -96,7 +96,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -134,7 +134,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -171,7 +171,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -208,7 +208,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -245,7 +245,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -525,7 +525,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -565,7 +565,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -605,7 +605,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -645,7 +645,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
@@ -685,7 +685,7 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtoverlay=i2c1=on
+dtparam=i2c1=on
 dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1

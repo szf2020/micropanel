@@ -51,6 +51,7 @@ set(SOURCES_PERSISTENCE
 # Define source files by directory
 set(SOURCES_DEVICES
     src/devices/DisplayDevice.cpp
+    src/devices/I2CDisplayDevice.cpp
     src/devices/Font8x8.cpp
     src/devices/InputDevice.cpp
     src/devices/DeviceManager.cpp
@@ -111,6 +112,7 @@ target_link_libraries(micropanel
     Threads::Threads
     ${UDEV_LIBRARY}
     ${CURL_LIBRARIES}
+    i2c
 )
 
 # Install target

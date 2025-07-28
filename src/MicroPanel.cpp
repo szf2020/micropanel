@@ -637,6 +637,7 @@ void MicroPanel::setupMenu()
     m_mainMenu->render();
 }
 
+/*
 void MicroPanel::run()
 {
     // Start disconnection monitor
@@ -654,8 +655,8 @@ void MicroPanel::run()
         if (m_deviceManager->isDeviceDisconnected() ||
             (m_baseDisplayDevice && m_baseDisplayDevice->isDisconnected())) {
             std::cout << "Device disconnection detected!" << std::endl;
-
-            if (m_config.autoDetect) {
+            
+	    if (m_config.autoDetect) {
                 // For auto-detect mode, try to reconnect
                 std::cout << "Attempting to reconnect..." << std::endl;
 
@@ -724,27 +725,11 @@ void MicroPanel::run()
             break;
         }
 
-
-
-        // Process input
-        //if (m_inputDevice->waitForEvents(100) > 0) {
-        //   m_inputDevice->processEvents(
-        //        [this](int direction) {
-                    // Handle rotation
-        //            m_mainMenu->handleRotation(direction);
-        //        },
-        //        [this]() {
-                    // Handle button press
-        //            m_mainMenu->handleButtonPress();
-        //        }
-        //    );
-        //}
-
-// Process input (NEW: handle GPIO vs traditional mode)
-if (m_config.useGPIOMode) {
-    // Use MultiInputDevice for GPIO mode
-    if (m_multiInputDevice && m_multiInputDevice->waitForEvents(100) > 0) {
-        m_multiInputDevice->processEvents(
+        // Process input (NEW: handle GPIO vs traditional mode)
+        if (m_config.useGPIOMode) {
+        // Use MultiInputDevice for GPIO mode
+        if (m_multiInputDevice && m_multiInputDevice->waitForEvents(100) > 0) {
+            m_multiInputDevice->processEvents(
             [this](int direction) {
                 // Handle rotation
                 m_mainMenu->handleRotation(direction);
@@ -754,11 +739,11 @@ if (m_config.useGPIOMode) {
                 m_mainMenu->handleButtonPress();
             }
         );
-    }
-} else {
-    // Use traditional InputDevice
-    if (m_inputDevice->waitForEvents(100) > 0) {
-        m_inputDevice->processEvents(
+        }
+        } else {
+        // Use traditional InputDevice
+        if (m_inputDevice->waitForEvents(100) > 0) {
+            m_inputDevice->processEvents(
             [this](int direction) {
                 // Handle rotation
                 m_mainMenu->handleRotation(direction);
@@ -767,11 +752,9 @@ if (m_config.useGPIOMode) {
                 // Handle button press
                 m_mainMenu->handleButtonPress();
             }
-        );
-    }
-}
-
-
+            );
+        }
+        }
 
         // Check for power save timeout
         if (m_config.powerSaveEnabled) {
@@ -805,6 +788,194 @@ void MicroPanel::shutdown()
         m_display->clear();
         usleep(Config::DISPLAY_CMD_DELAY);
         //m_display->drawText(0, 0, "Daemon stopped");
+        m_display->drawText(0, 0, "Rebooting.....");
+        usleep(Config::DISPLAY_CMD_DELAY * 10);
+    }
+
+    // Close devices
+    if (m_inputDevice) {
+        m_inputDevice->close();
+    }
+
+    if (m_baseDisplayDevice) {
+        m_baseDisplayDevice->close();
+    }
+
+    // Clear module registry
+    m_modules.clear();
+
+    // Clear menu
+    if (m_mainMenu) {
+        m_mainMenu->clear();
+    }
+
+    std::cout << "MicroPanel shutdown complete" << std::endl;
+}
+*/
+void MicroPanel::run()
+{
+    // Check if we're using I2C mode
+    bool isI2CMode = (m_config.serialDevice.find("/dev/i2c-") == 0);
+    
+    // Only start disconnection monitor for USB/serial devices, not I2C
+    if (!isI2CMode) {
+        std::cout << "Starting USB device disconnection monitor" << std::endl;
+        m_deviceManager->startDisconnectionMonitor();
+    } else {
+        std::cout << "I2C mode detected - skipping USB disconnection monitoring" << std::endl;
+    }
+
+    // Set running flag
+    m_running = true;
+
+    // Main event loop
+    struct timeval lastBufferFlush = {0, 0};
+    struct timeval now;
+
+    while (m_running) {
+        // Check if device was disconnected - ONLY for non-I2C devices
+        if (!isI2CMode && (m_deviceManager->isDeviceDisconnected() ||
+            (m_baseDisplayDevice && m_baseDisplayDevice->isDisconnected()))) {
+            std::cout << "USB device disconnection detected!" << std::endl;
+
+            if (m_config.autoDetect) {
+                // For auto-detect mode, try to reconnect
+                std::cout << "Attempting to reconnect..." << std::endl;
+
+                // Clean up current devices
+                if (m_inputDevice) {
+                    m_inputDevice->close();
+                }
+
+                if (m_baseDisplayDevice) {
+                    m_baseDisplayDevice->close();
+                }
+
+                // Stop the disconnection monitor while we wait for reconnection
+                m_deviceManager->stopDisconnectionMonitor();
+
+                // Wait for device to reconnect with a timeout
+                bool reconnected = m_deviceManager->monitorDeviceUntilConnected(m_running);
+
+                if (reconnected) {
+                    std::cout << "Successfully reconnected to device!" << std::endl;
+
+                    // Get new device paths
+                    auto devices = m_deviceManager->detectDevices();
+                    if (!devices.first.empty() && !devices.second.empty()) {
+                        // Update device paths
+                        m_config.inputDevice = devices.first;
+                        m_config.serialDevice = devices.second;
+
+                        // Create and open new devices
+                        m_inputDevice = std::make_shared<InputDevice>(m_config.inputDevice);
+                        m_baseDisplayDevice = createDisplayDevice(m_config.serialDevice);
+
+                        if (m_inputDevice->open() && m_baseDisplayDevice->open()) {
+                            std::cout << "Successfully opened reconnected devices" << std::endl;
+                            
+                            // Update display and redraw menu
+                            m_display = std::make_shared<Display>(m_baseDisplayDevice);
+                            if (m_config.powerSaveEnabled) {
+                                m_display->enablePowerSave(true);
+                            }
+                            
+                            // Reinitialize modules with new device handles
+                            initializeModules();
+
+                            // Reinitialize menu
+                            m_mainMenu = std::make_shared<Menu>(m_display);
+                            setupMenu();
+
+                            // Restart the disconnection monitor
+                            m_deviceManager->startDisconnectionMonitor();
+
+                            // Continue with the main loop
+                            continue;
+                        } else {
+                            std::cerr << "Failed to open reconnected devices" << std::endl;
+                        }
+                    } else {
+                        std::cerr << "Failed to get device paths after reconnection" << std::endl;
+                    }
+                } else {
+                    std::cerr << "Failed to reconnect to device" << std::endl;
+                }
+            }
+
+            // Exit the loop if reconnection failed or is not enabled
+            break;
+        }
+
+        // Process input (handle GPIO vs traditional mode)
+        if (m_config.useGPIOMode) {
+            // Use MultiInputDevice for GPIO mode
+            if (m_multiInputDevice && m_multiInputDevice->waitForEvents(100) > 0) {
+                m_multiInputDevice->processEvents(
+                    [this](int direction) {
+                        // Handle rotation
+                        m_mainMenu->handleRotation(direction);
+                    },
+                    [this]() {
+                        // Handle button press
+                        m_mainMenu->handleButtonPress();
+                    }
+                );
+            }
+        } else {
+            // Use traditional InputDevice
+            if (m_inputDevice->waitForEvents(100) > 0) {
+                m_inputDevice->processEvents(
+                    [this](int direction) {
+                        // Handle rotation
+                        m_mainMenu->handleRotation(direction);
+                    },
+                    [this]() {
+                        // Handle button press
+                        m_mainMenu->handleButtonPress();
+                    }
+                );
+            }
+        }
+
+        // Check for power save timeout
+        if (m_config.powerSaveEnabled) {
+            m_display->checkPowerSaveTimeout();
+        }
+
+        // Update timestamp for periodic operations
+        gettimeofday(&now, nullptr);
+
+        // Calculate time since last buffer flush
+        long timeSinceFlush = (now.tv_sec - lastBufferFlush.tv_sec) * 1000 +
+                             (now.tv_usec - lastBufferFlush.tv_usec) / 1000;
+
+        // Flush command buffer at regular intervals - only for devices that support buffering
+        if (timeSinceFlush > Config::CMD_BUFFER_FLUSH_INTERVAL) {
+            // Only flush buffer for serial devices, I2C doesn't use buffering
+            if (m_baseDisplayDevice && !isI2CMode) {
+                m_baseDisplayDevice->flushBuffer();
+            }
+            lastBufferFlush = now;
+        }
+
+        // Short delay to reduce CPU usage
+        usleep(Config::MAIN_LOOP_DELAY);
+    }
+}
+
+void MicroPanel::shutdown()
+{
+    // Stop disconnection monitor - only if it was started
+    bool isI2CMode = (m_config.serialDevice.find("/dev/i2c-") == 0);
+    if (!isI2CMode) {
+        m_deviceManager->stopDisconnectionMonitor();
+    }
+
+    // Display shutdown message
+    if (m_display && m_baseDisplayDevice && m_baseDisplayDevice->isOpen()) {
+        m_display->clear();
+        usleep(Config::DISPLAY_CMD_DELAY);
         m_display->drawText(0, 0, "Rebooting.....");
         usleep(Config::DISPLAY_CMD_DELAY * 10);
     }
@@ -1051,13 +1222,13 @@ std::shared_ptr<BaseDisplayDevice> MicroPanel::createDisplayDevice(const std::st
 
     // Detect device type based on path
     if (devicePath.find("/dev/i2c-") == 0) {
-        std::cout << "I2C display detected but not yet implemented: " << devicePath << std::endl;
-        std::cout << "Falling back to serial mode for now" << std::endl;
-        return std::make_shared<DisplayDevice>("/dev/ttyACM0"); // Fallback
+        //std::cout << "I2C display detected but not yet implemented: " << devicePath << std::endl;
+        //std::cout << "Falling back to serial mode for now" << std::endl;
+        //return std::make_shared<DisplayDevice>("/dev/ttyACM0"); // Fallback
         
         // I2C device path detected
-        //std::cout << "Detected I2C display device: " << devicePath << std::endl;
-        //return std::make_shared<I2CDisplayDevice>(devicePath);
+        std::cout << "Detected I2C display device: " << devicePath << std::endl;
+        return std::make_shared<I2CDisplayDevice>(devicePath);
     } 
     else if (devicePath.find("/dev/ttyACM") == 0 || devicePath.find("/dev/ttyUSB") == 0) {
         // Serial device path detected  

@@ -117,6 +117,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
     case $config_type in
@@ -149,6 +155,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
         "15.6")
@@ -180,6 +192,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
         "27")
@@ -211,6 +229,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
         "edid")
@@ -234,6 +258,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
     esac
@@ -516,6 +546,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 14.6-fhd\" display"
@@ -550,6 +586,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 14.6\" display"
@@ -584,6 +626,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 15.6\" display"
@@ -618,6 +666,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 27\" display"
@@ -644,6 +698,12 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 enable_uart=1
 init_uart_clock=16000000
+dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
+dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
+dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
+dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
+dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for EDID auto-detection display"

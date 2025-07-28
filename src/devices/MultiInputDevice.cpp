@@ -28,63 +28,68 @@ MultiInputDevice::~MultiInputDevice() {
 
 std::vector<std::string> MultiInputDevice::detectGPIOButtonDevices() {
     std::vector<std::string> devices;
-    
-    // Scan /dev/input/event* for GPIO button devices
+
+    // Scan /dev/input/event* for GPIO button devices AND rotary encoders
     DIR* dir = opendir("/dev/input");
     if (!dir) {
         std::cerr << "Failed to open /dev/input directory" << std::endl;
         return devices;
     }
-    
+
     struct dirent* entry;
     while ((entry = readdir(dir)) != nullptr) {
         if (strncmp(entry->d_name, "event", 5) != 0) {
             continue;
         }
-        
+
         std::string devicePath = "/dev/input/";
         devicePath += entry->d_name;
-        
-        // Check if this is a GPIO button device
+
+        // Check if this is a GPIO button device OR rotary encoder
         int fd = ::open(devicePath.c_str(), O_RDONLY | O_NONBLOCK);
         if (fd < 0) {
             continue;
         }
-        
+
         // Get device name
         char name[256] = {0};
         if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) >= 0) {
             std::string deviceName(name);
-            
-            // Look for GPIO button devices (pattern: "button@X")
-            if (deviceName.find("button@") == 0) {
-                std::cout << "Found GPIO button device: " << devicePath << " (" << deviceName << ")" << std::endl;
+
+            // Look for GPIO button devices (pattern: "button@X") OR rotary encoders (pattern: "rotary@X")
+            if (deviceName.find("button@") == 0 || deviceName.find("rotary@") == 0) {
+                std::cout << "Found GPIO device: " << devicePath << " (" << deviceName << ")" << std::endl;
                 devices.push_back(devicePath);
             }
         }
-        
+
         ::close(fd);
     }
-    
+
     closedir(dir);
-    
+
     // Sort devices for consistent ordering
     std::sort(devices.begin(), devices.end());
-    
+
     return devices;
 }
 
 bool MultiInputDevice::addDevice(const std::string& devicePath) {
     m_devices.emplace_back(devicePath);
     GPIODevice& device = m_devices.back();
-    
+
     // Get device info
     device.name = getDeviceName(devicePath);
-    device.keycode = getDeviceKeycode(devicePath);
-    
-    std::cout << "Added GPIO device: " << devicePath 
-              << " (" << device.name << ", keycode=" << device.keycode << ")" << std::endl;
-    
+    device.type = detectDeviceType(devicePath); // NEW: Detect device type
+    if (device.type == DeviceType::BUTTON) {
+        device.keycode = getDeviceKeycode(devicePath);
+        std::cout << "Added GPIO button device: " << devicePath
+                  << " (" << device.name << ", keycode=" << device.keycode << ")" << std::endl;
+    } else {
+        std::cout << "Added rotary encoder device: " << devicePath
+                  << " (" << device.name << ")" << std::endl;
+    }
+
     return true;
 }
 
@@ -262,41 +267,49 @@ bool MultiInputDevice::processEvents(std::function<void(int)> onRotation, std::f
     return eventsProcessed > 0;
 }
 
-bool MultiInputDevice::processDeviceEvents(GPIODevice& device, std::function<void(int)> onRotation, 
+bool MultiInputDevice::processDeviceEvents(GPIODevice& device, std::function<void(int)> onRotation,
                                          std::function<void()> onButtonPress) {
     struct input_event ev;
     bool eventProcessed = false;
-    
+
     // Read all available events from this device
     while (read(device.fd, &ev, sizeof(ev)) > 0) {
         // Skip sync events
         if (ev.type == EV_SYN) continue;
-        
-        // Handle key events
-        if (ev.type == EV_KEY && ev.value == 1) { // Key press (not release)
-            std::cout << "GPIO device " << device.path << " key press: " << ev.code 
-                      << " (expected: " << device.keycode << ")" << std::endl;
-            
-            if (ev.code == device.keycode) {
-                if (ev.code == KEY_ENTER) {
-                    // Handle enter button
-                    if (onButtonPress) {
-                        std::cout << "ENTER button pressed on " << device.path << std::endl;
-                        onButtonPress();
-                    }
-                } else {
-                    // Handle directional buttons
-                    std::cout << "Direction button pressed: " << ev.code << " on " << device.path << std::endl;
-                    synthesizeMovementEvent(ev.code, onRotation);
-                }
-                eventProcessed = true;
-            }else {
-                  std::cout << "DEBUG: Key mismatch - received " << ev.code << " but expected " << device.keycode << " on " << device.path << std::endl;
-            }
 
+        if (device.type == DeviceType::ROTARY_ENCODER) {
+            // Handle rotary encoder events (EV_REL)
+            if (ev.type == EV_REL && ev.code == REL_X) {
+                std::cout << "Rotary encoder " << device.path << " REL_X: " << ev.value << std::endl;
+                processRotaryEncoderEvent(device, ev.value, onRotation);
+                eventProcessed = true;
+            }
+        } else {
+            // Handle button events (EV_KEY) - existing logic
+            if (ev.type == EV_KEY && ev.value == 1) { // Key press (not release)
+                std::cout << "GPIO device " << device.path << " key press: " << ev.code
+                          << " (expected: " << device.keycode << ")" << std::endl;
+
+                if (ev.code == device.keycode) {
+                    if (ev.code == KEY_ENTER) {
+                        // Handle enter button
+                        if (onButtonPress) {
+                            std::cout << "ENTER button pressed on " << device.path << std::endl;
+                            onButtonPress();
+                        }
+                    } else {
+                        // Handle directional buttons
+                        std::cout << "Direction button pressed: " << ev.code << " on " << device.path << std::endl;
+                        synthesizeMovementEvent(ev.code, onRotation);
+                    }
+                    eventProcessed = true;
+                } else {
+                    std::cout << "DEBUG: Key mismatch - received " << ev.code << " but expected " << device.keycode << " on " << device.path << std::endl;
+                }
+            }
         }
     }
-    
+
     return eventProcessed;
 }
 
@@ -336,11 +349,49 @@ void MultiInputDevice::logDeviceInfo() const {
     for (const auto& device : m_devices) {
         std::cout << "  " << device.path << " (" << device.name << "): ";
         if (device.isOpen) {
-            std::cout << "OPEN, keycode=" << device.keycode;
+            if (device.type == DeviceType::ROTARY_ENCODER) {
+                std::cout << "OPEN, type=ROTARY_ENCODER";
+            } else {
+                std::cout << "OPEN, type=BUTTON, keycode=" << device.keycode;
+            }
         } else {
             std::cout << "CLOSED";
         }
         std::cout << std::endl;
     }
     std::cout << "===============================" << std::endl;
+}
+
+MultiInputDevice::DeviceType MultiInputDevice::detectDeviceType(const std::string& devicePath) {
+    int fd = ::open(devicePath.c_str(), O_RDONLY);
+    if (fd < 0) {
+        return DeviceType::BUTTON; // Default
+    }
+
+    // Get device name
+    char name[256] = {0};
+    if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) >= 0) {
+        std::string deviceName(name);
+        ::close(fd);
+
+        if (deviceName.find("rotary@") == 0) {
+            return DeviceType::ROTARY_ENCODER;
+        }
+    } else {
+        ::close(fd);
+    }
+
+    return DeviceType::BUTTON;
+}
+void MultiInputDevice::processRotaryEncoderEvent(GPIODevice& device, int relativeValue, std::function<void(int)> onRotation) {
+    if (!onRotation) return;
+
+    // Apply ±5 scaling and direction mapping to match RP2040 behavior
+    // RP2040: clockwise = -5, counter-clockwise = +5
+    // Hardware: clockwise = +1, counter-clockwise = -1
+    // Mapping: hardware +1 → application -5, hardware -1 → application +5
+    int scaledMovement = relativeValue * 5;
+
+    std::cout << "Rotary encoder: raw=" << relativeValue << " → scaled=" << scaledMovement << std::endl;
+    onRotation(scaledMovement);
 }

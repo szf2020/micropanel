@@ -182,6 +182,8 @@ test 0 -eq $? && echo "[OK]" || { echo "[FAIL]"; exit 1; }
 cp configs/config.txt /boot/firmware/
 #enable high-speed-uart for mcu programming
 sed -i 's/^console=serial0,115200 //' /boot/firmware/cmdline.txt
+#enable i2c module loading so that /dev/i2c* shows up
+echo 'i2c-dev' | sudo tee /etc/modules-load.d/i2c.conf
 
 sync
 printf "Installation complete, reboot the system................ \n"

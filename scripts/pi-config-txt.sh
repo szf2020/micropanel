@@ -96,8 +96,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -123,6 +121,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             ;;
     case $config_type in
@@ -134,8 +134,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -161,6 +159,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             ;;
         "15.6")
@@ -171,8 +171,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -198,6 +196,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             ;;
         "27")
@@ -208,8 +208,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -235,6 +233,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             ;;
         "edid")
@@ -245,8 +245,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -264,6 +262,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             ;;
     esac
@@ -525,8 +525,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -552,6 +550,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 14.6-fhd\" display"
@@ -565,8 +565,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -592,6 +590,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 14.6\" display"
@@ -605,8 +605,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -632,6 +630,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 15.6\" display"
@@ -645,8 +645,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -672,6 +670,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 27\" display"
@@ -685,8 +685,6 @@ auto_initramfs=1
 disable_overscan=1
 arm_64bit=1
 arm_boost=1
-dtparam=i2c1=on
-dtparam=i2c_arm=on
 dtoverlay=vc4-fkms-v3d
 disable_fw_kms_setup=1
 max_framebuffers=2
@@ -704,6 +702,8 @@ dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
+dtparam=i2c=on
+dtoverlay=i2c3,pins_4_5
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for EDID auto-detection display"

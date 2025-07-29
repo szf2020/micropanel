@@ -121,7 +121,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
@@ -159,7 +159,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
@@ -196,7 +196,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
@@ -233,7 +233,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
@@ -262,7 +262,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             ;;
@@ -550,7 +550,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
@@ -590,7 +590,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
@@ -630,7 +630,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
@@ -670,7 +670,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then
@@ -702,7 +702,7 @@ dtoverlay=gpio-key,gpio=22,active_low=1,gpio_pull=up,keycode=105   # KEY_LEFT
 dtoverlay=gpio-key,gpio=23,active_low=1,gpio_pull=up,keycode=106   # KEY_RIGHT
 dtoverlay=gpio-key,gpio=24,active_low=1,gpio_pull=up,keycode=103   # KEY_UP
 dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
-dtoverlay=gpio-key,gpio=5,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
+dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 EOF
             if [ $VERBOSE -eq 1 ]; then

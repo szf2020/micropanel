@@ -122,7 +122,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             ;;
     case $config_type in
@@ -160,7 +161,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             ;;
         "15.6")
@@ -197,7 +199,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             ;;
         "27")
@@ -234,7 +237,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             ;;
         "edid")
@@ -263,7 +267,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             ;;
     esac
@@ -551,7 +556,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 14.6-fhd\" display"
@@ -591,7 +597,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 14.6\" display"
@@ -631,7 +638,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 15.6\" display"
@@ -671,7 +679,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for 27\" display"
@@ -703,7 +712,8 @@ dtoverlay=gpio-key,gpio=25,active_low=1,gpio_pull=up,keycode=108   # KEY_DOWN
 dtoverlay=gpio-key,gpio=13,active_low=1,gpio_pull=up,keycode=28     # KEY_ENTER
 dtoverlay=rotary-encoder,pin_a=6,pin_b=12,relative_axis=1
 dtparam=i2c=on
-dtoverlay=i2c3,pins_4_5
+dtparam=i2c_arm_baudrate=400000
+dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             if [ $VERBOSE -eq 1 ]; then
                 echo "Updated config for EDID auto-detection display"

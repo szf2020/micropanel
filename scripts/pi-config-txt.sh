@@ -126,7 +126,6 @@ dtparam=i2c_arm_baudrate=400000
 dtoverlay=i2c3,pins_4_5,baudrate=400000
 EOF
             ;;
-    case $config_type in
         "14.6")
             cat > "$temp_file" << 'EOF'
 dtparam=audio=on

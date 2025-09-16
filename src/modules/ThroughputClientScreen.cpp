@@ -1111,7 +1111,7 @@ bool ThroughputClientScreen::handleInput() {
                         // Start editing IP
                         m_editingIp = true;
                         m_ipSelector->setIp(m_serverIp);
-                        //m_ipSelector->startEditing();
+                        m_ipSelector->handleButton(); // Activate cursor mode
                         renderServerIPSubmenu(false);
                         redrawNeeded = true;
                     } else if (m_submenuSelection == 1) {
@@ -2212,7 +2212,11 @@ void ThroughputClientScreen::handleGPIORotation(int direction) {
     } else if (m_state == ThroughputClientState::SUBMENU_STATE_SERVER_IP && !m_editingIp) {
         // Server IP submenu navigation
         int numOptions = 3; // IP, Auto-Discover, Back
-        m_submenuSelection = (m_submenuSelection + numOptions + direction) % numOptions;
+        if (direction < 0) {
+            m_submenuSelection = (m_submenuSelection - 1 + numOptions) % numOptions;
+        } else {
+            m_submenuSelection = (m_submenuSelection + 1) % numOptions;
+        }
         renderServerIPSubmenu(false);
     } else if (m_state == ThroughputClientState::SUBMENU_STATE_AUTO_DISCOVER && !m_discoveryInProgress) {
         // Auto-discover results navigation
@@ -2382,6 +2386,7 @@ bool ThroughputClientScreen::handleGPIOButtonPress() {
                 // Start editing IP
                 m_editingIp = true;
                 m_ipSelector->setIp(m_serverIp);
+                m_ipSelector->handleButton(); // Activate cursor mode
                 renderServerIPSubmenu(false);
             } else if (m_submenuSelection == 1) {
                 // Auto-discover

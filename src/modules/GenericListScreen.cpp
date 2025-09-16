@@ -297,13 +297,7 @@ void GenericListScreen::renderList()
     int lastVisibleItem = std::min(m_firstVisibleItem + m_maxVisibleItems,
                                   static_cast<int>(m_items.size()));
 
-    // Clear the list area
-    for (int i = 0; i < m_maxVisibleItems; i++) {
-        int yPos = 16 + (i * 8);
-        m_display->drawText(0, yPos, "                ");
-        usleep(Config::DISPLAY_CMD_DELAY);
-    }
-    // Draw visible options
+    // Draw visible options (clear and draw each line together to reduce flicker)
     for (int i = m_firstVisibleItem; i < lastVisibleItem; i++) {
         int displayIndex = i - m_firstVisibleItem;
         int yPos = 16 + (displayIndex * 8);
@@ -326,7 +320,17 @@ void GenericListScreen::renderList()
         if (buffer.length() > 16) {
             buffer = buffer.substr(0, 16);
         }
+        // Pad to ensure line is fully overwritten (avoids need for separate clear)
+        while (buffer.length() < 16) {
+            buffer += " ";
+        }
         m_display->drawText(0, yPos, buffer);
+        usleep(Config::DISPLAY_CMD_DELAY);
+    }
+    // Clear any remaining lines if there are fewer items than max visible
+    for (int i = lastVisibleItem - m_firstVisibleItem; i < m_maxVisibleItems; i++) {
+        int yPos = 16 + (i * 8);
+        m_display->drawText(0, yPos, "                ");
         usleep(Config::DISPLAY_CMD_DELAY);
     }
 

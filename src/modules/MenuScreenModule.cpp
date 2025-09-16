@@ -293,7 +293,13 @@ bool MenuScreenModule::handleGPIOButtonPress() {
                   << ", exitToMainMenu: " << m_exitToMainMenu << std::endl;
 
         // Check for exit conditions (same as the original handleInput logic)
-        if (m_exitToParent || m_exitToMainMenu) {
+        if (m_exitToParent) {
+            // If we're exiting to the main menu, tell the parent to also exit
+            if (m_exitToMainMenu && m_parentMenu) {
+                // Propagate the flag to the parent menu
+                m_parentMenu->m_exitToMainMenu = true;
+                m_parentMenu->m_exitToParent = true;
+            }
             std::cout << "MenuScreenModule should exit!" << std::endl;
             return false; // Exit the module
         }

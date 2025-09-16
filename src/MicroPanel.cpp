@@ -366,6 +366,15 @@ bool MicroPanel::loadConfigFromJson() {
                 // Add to module registry
                 m_modules[id] = menuModule;
 
+                // CRITICAL: Set GPIO handler for ALL menu modules, not just enabled ones
+                if (m_config.useGPIOMode) {
+                    menuModule->setUseGPIOMode(true);
+                    menuModule->setGPIOHandler([this](std::shared_ptr<ScreenModule> submodule) {
+                    this->runModuleWithGPIOInput(submodule);
+                    });
+                    Logger::debug("Set GPIO handler for menu module: " + id);
+                }
+
                 // Add to main menu only if enabled
                 if (enabled) {
                     registerModuleInMenu(id, title);
@@ -470,11 +479,6 @@ bool MicroPanel::loadConfigFromJson() {
             }
         }
 
-        // Add Exit option at the end
-        //m_mainMenu->addItem(std::make_shared<ActionMenuItem>("Exit", [this]() {
-        //    m_running = false;
-        //}));
-
         // Debug the menu state
         Logger::debug("Menu setup complete, about to render");
 
@@ -533,35 +537,7 @@ void MicroPanel::initializeModules()
     m_modules["throughputclient"] = std::make_shared<ThroughputClientScreen>(m_display, m_inputDevice);
     Logger::debug("Module initialization complete - " + std::to_string(m_modules.size()) + " modules available");
 }
-/*
-void MicroPanel::registerModuleInMenu(const std::string& moduleName, const std::string& menuTitle) {
-    m_mainMenu->addItem(std::make_shared<ActionMenuItem>(menuTitle, [this, moduleName]() {
-        std::cout << "Executing action for module: " << moduleName << std::endl;
-        auto module = std::dynamic_pointer_cast<ScreenModule>(m_modules[moduleName]);
-        if (module) {
-            // Clear main menu flag if this is a menu module
-            auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
-            if (menuModule) {
-                menuModule->clearMainMenuFlag();
-            }
 
-            // Use GPIO input for module execution
-            if (m_config.useGPIOMode) {
-                runModuleWithGPIOInput(module);
-            } else {
-                module->run();
-            }
-
-            // Explicitly redraw the main menu when returning
-            m_display->clear();
-            usleep(Config::DISPLAY_CMD_DELAY * 5);
-            m_mainMenu->render();
-        } else {
-            Logger::error("Failed to execute module: " + moduleName);
-        }
-    }));
-}
-*/
 void MicroPanel::registerModuleInMenu(const std::string& moduleName, const std::string& menuTitle) {
     m_mainMenu->addItem(std::make_shared<ActionMenuItem>(menuTitle, [this, moduleName]() {
         std::cout << "Executing action for module: " << moduleName << std::endl;
@@ -637,186 +613,11 @@ void MicroPanel::setupMenu()
     m_mainMenu->render();
 }
 
-/*
-void MicroPanel::run()
-{
-    // Start disconnection monitor
-    m_deviceManager->startDisconnectionMonitor();
-
-    // Set running flag
-    m_running = true;
-
-    // Main event loop
-    struct timeval lastBufferFlush = {0, 0};
-    struct timeval now;
-
-    while (m_running) {
-        // Check if device was disconnected
-        if (m_deviceManager->isDeviceDisconnected() ||
-            (m_baseDisplayDevice && m_baseDisplayDevice->isDisconnected())) {
-            std::cout << "Device disconnection detected!" << std::endl;
-            
-	    if (m_config.autoDetect) {
-                // For auto-detect mode, try to reconnect
-                std::cout << "Attempting to reconnect..." << std::endl;
-
-                // Clean up current devices
-                if (m_inputDevice) {
-                    m_inputDevice->close();
-                }
-
-                if (m_baseDisplayDevice) {
-                    m_baseDisplayDevice->close();
-                }
-
-                // Stop the disconnection monitor while we wait for reconnection
-                m_deviceManager->stopDisconnectionMonitor();
-
-                // Wait for device to reconnect with a timeout
-                bool reconnected = m_deviceManager->monitorDeviceUntilConnected(m_running);
-
-                if (reconnected) {
-                    std::cout << "Successfully reconnected to device!" << std::endl;
-
-                    // Get new device paths
-                    auto devices = m_deviceManager->detectDevices();
-                    if (!devices.first.empty() && !devices.second.empty()) {
-                        // Update device paths
-                        m_config.inputDevice = devices.first;
-                        m_config.serialDevice = devices.second;
-
-                        // Create and open new devices
-                        m_inputDevice = std::make_shared<InputDevice>(m_config.inputDevice);
-                        //m_displayDevice = std::make_shared<DisplayDevice>(m_config.serialDevice);
-			m_baseDisplayDevice = createDisplayDevice(m_config.serialDevice);
-
-                        if (m_inputDevice->open() && m_baseDisplayDevice->open()) {
-                            std::cout << "Successfully opened reconnected devices" << std::endl;
-
-                            // Update display and redraw menu
-                            m_display = std::make_shared<Display>(m_baseDisplayDevice);
-                            if (m_config.powerSaveEnabled) {
-                                m_display->enablePowerSave(true);
-                            }
-                            // Reinitialize modules with new device handles
-                            initializeModules();
-
-                            // Reinitialize menu
-                            m_mainMenu = std::make_shared<Menu>(m_display);
-                            setupMenu();
-
-                            // Restart the disconnection monitor
-                            m_deviceManager->startDisconnectionMonitor();
-
-                            // Continue with the main loop
-                            continue;
-                        } else {
-                            std::cerr << "Failed to open reconnected devices" << std::endl;
-                        }
-                    } else {
-                        std::cerr << "Failed to get device paths after reconnection" << std::endl;
-                    }
-                } else {
-                    std::cerr << "Failed to reconnect to device" << std::endl;
-                }
-            }
-
-            // Exit the loop if reconnection failed or is not enabled
-            break;
-        }
-
-        // Process input (NEW: handle GPIO vs traditional mode)
-        if (m_config.useGPIOMode) {
-        // Use MultiInputDevice for GPIO mode
-        if (m_multiInputDevice && m_multiInputDevice->waitForEvents(100) > 0) {
-            m_multiInputDevice->processEvents(
-            [this](int direction) {
-                // Handle rotation
-                m_mainMenu->handleRotation(direction);
-            },
-            [this]() {
-                // Handle button press
-                m_mainMenu->handleButtonPress();
-            }
-        );
-        }
-        } else {
-        // Use traditional InputDevice
-        if (m_inputDevice->waitForEvents(100) > 0) {
-            m_inputDevice->processEvents(
-            [this](int direction) {
-                // Handle rotation
-                m_mainMenu->handleRotation(direction);
-            },
-            [this]() {
-                // Handle button press
-                m_mainMenu->handleButtonPress();
-            }
-            );
-        }
-        }
-
-        // Check for power save timeout
-        if (m_config.powerSaveEnabled) {
-            m_display->checkPowerSaveTimeout();
-        }
-
-        // Update timestamp for periodic operations
-        gettimeofday(&now, nullptr);
-
-        // Calculate time since last buffer flush
-        long timeSinceFlush = (now.tv_sec - lastBufferFlush.tv_sec) * 1000 +
-                             (now.tv_usec - lastBufferFlush.tv_usec) / 1000;
-
-        // Flush command buffer at regular intervals
-        if (timeSinceFlush > Config::CMD_BUFFER_FLUSH_INTERVAL) {
-            m_baseDisplayDevice->flushBuffer();
-            lastBufferFlush = now;
-        }
-
-        // Short delay to reduce CPU usage
-        usleep(Config::MAIN_LOOP_DELAY);
-    }
-}
-void MicroPanel::shutdown()
-{
-    // Stop disconnection monitor
-    m_deviceManager->stopDisconnectionMonitor();
-
-    // Display shutdown message
-    if (m_display && m_baseDisplayDevice && m_baseDisplayDevice->isOpen()) {
-        m_display->clear();
-        usleep(Config::DISPLAY_CMD_DELAY);
-        //m_display->drawText(0, 0, "Daemon stopped");
-        m_display->drawText(0, 0, "Rebooting.....");
-        usleep(Config::DISPLAY_CMD_DELAY * 10);
-    }
-
-    // Close devices
-    if (m_inputDevice) {
-        m_inputDevice->close();
-    }
-
-    if (m_baseDisplayDevice) {
-        m_baseDisplayDevice->close();
-    }
-
-    // Clear module registry
-    m_modules.clear();
-
-    // Clear menu
-    if (m_mainMenu) {
-        m_mainMenu->clear();
-    }
-
-    std::cout << "MicroPanel shutdown complete" << std::endl;
-}
-*/
 void MicroPanel::run()
 {
     // Check if we're using I2C mode
     bool isI2CMode = (m_config.serialDevice.find("/dev/i2c-") == 0);
-    
+
     // Only start disconnection monitor for USB/serial devices, not I2C
     if (!isI2CMode) {
         std::cout << "Starting USB device disconnection monitor" << std::endl;
@@ -873,13 +674,13 @@ void MicroPanel::run()
 
                         if (m_inputDevice->open() && m_baseDisplayDevice->open()) {
                             std::cout << "Successfully opened reconnected devices" << std::endl;
-                            
+
                             // Update display and redraw menu
                             m_display = std::make_shared<Display>(m_baseDisplayDevice);
                             if (m_config.powerSaveEnabled) {
                                 m_display->enablePowerSave(true);
                             }
-                            
+
                             // Reinitialize modules with new device handles
                             initializeModules();
 
@@ -1050,18 +851,23 @@ bool MicroPanel::loadModuleDependencies() {
 }
 
 
-// NEW: Method to run modules with GPIO input handling
 void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
     std::cout << "Running module with GPIO input..." << std::endl;
 
     // Check what type of module this is
     auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
     auto brightnessModule = std::dynamic_pointer_cast<BrightnessScreen>(module);
+    auto netInfoModule = std::dynamic_pointer_cast<NetInfoScreen>(module);
+    auto pingModule = std::dynamic_pointer_cast<IPPingScreen>(module);
 
     if (menuModule) {
         std::cout << "Module type: MenuScreenModule (ID: " << menuModule->getModuleId() << ")" << std::endl;
     } else if (brightnessModule) {
         std::cout << "Module type: BrightnessScreen" << std::endl;
+    } else if (netInfoModule) {
+        std::cout << "Module type: NetInfoScreen" << std::endl;
+    } else if (pingModule) {
+        std::cout << "Module type: IPPingScreen" << std::endl;
     } else {
         std::cout << "Module type: Generic ScreenModule" << std::endl;
     }
@@ -1090,30 +896,36 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
                 [&]() {
                     std::cout << "GPIO button press in module" << std::endl;
 
-                    // Handle button press differently for menu vs non-menu modules
+                    // Handle button press differently for different module types
                     if (menuModule) {
                         // For menu modules, simulate button press to trigger menu selection
                         std::cout << "Processing menu button press" << std::endl;
-                        simulateButtonPressForModule(module,moduleRunning);
-                    //} else {
-                        // For non-menu modules, button press exits
-                    //    std::cout << "Exiting non-menu module" << std::endl;
-                    //    moduleRunning = false;
-                    //}
-		   } else {
-		    // For non-menu modules, check if it's GenericListScreen
-		    auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
-		    if (genericListModule) {
-		        std::cout << "Processing GenericListScreen button press" << std::endl;
-		        if (!genericListModule->handleGPIOButtonPress()) {
-		            moduleRunning = false;
-		        }
-		    } else {
-		        // For other non-menu modules, button press exits
-		        std::cout << "Exiting non-menu module" << std::endl;
-		        moduleRunning = false;
-		    }
-		}
+                        simulateButtonPressForModule(module, moduleRunning);
+                    } else if (netInfoModule) {
+                        // For NetInfoScreen, use its GPIO button handler
+                        std::cout << "Processing NetInfoScreen button press" << std::endl;
+                        if (!netInfoModule->handleGPIOButtonPress()) {
+                            moduleRunning = false;
+                        }
+                    } else if (pingModule) {
+                        std::cout << "Processing IPPingScreen button press" << std::endl;
+                        if (!pingModule->handleGPIOButtonPress()) {
+                            moduleRunning = false;
+                        }
+                    } else {
+                        // For non-menu modules, check if it's GenericListScreen
+                        auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
+                        if (genericListModule) {
+                            std::cout << "Processing GenericListScreen button press" << std::endl;
+                            if (!genericListModule->handleGPIOButtonPress()) {
+                                moduleRunning = false;
+                            }
+                        } else {
+                            // For other non-menu modules, button press exits
+                            std::cout << "Exiting non-menu module" << std::endl;
+                            moduleRunning = false;
+                        }
+                    }
                 }
             );
         }
@@ -1136,9 +948,24 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
     std::cout << "Module exited successfully" << std::endl;
 }
 
-
 // NEW: Helper method to simulate rotation for different module types
 void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module, int direction) {
+    // Check for IPPingScreen
+    auto pingModule = std::dynamic_pointer_cast<IPPingScreen>(module);
+    if (pingModule) {
+       std::cout << "SUCCESS: IPPingScreen - calling handleGPIORotation" << std::endl;
+       pingModule->handleGPIORotation(direction);
+       return;
+    }
+
+    // Check for NetInfoScreen
+    auto netInfoModule = std::dynamic_pointer_cast<NetInfoScreen>(module);
+    if (netInfoModule) {
+       std::cout << "SUCCESS: NetInfoScreen - calling handleGPIORotation" << std::endl;
+       netInfoModule->handleGPIORotation(direction);
+       return;
+    }
+
     // Handle MenuScreenModule - this covers ALL menu-type modules!
     auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
     if (menuModule) {
@@ -1194,6 +1021,16 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     }
 }
 void MicroPanel::simulateButtonPressForModule(std::shared_ptr<ScreenModule> module, bool& moduleRunning) {
+    // Check for NetInfoScreen first
+    auto netInfoModule = std::dynamic_pointer_cast<NetInfoScreen>(module);
+    if (netInfoModule) {
+        std::cout << "NetInfoScreen button press - handling selection" << std::endl;
+        if (!netInfoModule->handleGPIOButtonPress()) {
+            moduleRunning = false; // Exit if method returns false
+        }
+        return;
+    }
+
     auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
     if (menuModule) {
         std::cout << "Simulating menu button press - selecting menu item" << std::endl;
@@ -1225,13 +1062,13 @@ std::shared_ptr<BaseDisplayDevice> MicroPanel::createDisplayDevice(const std::st
         //std::cout << "I2C display detected but not yet implemented: " << devicePath << std::endl;
         //std::cout << "Falling back to serial mode for now" << std::endl;
         //return std::make_shared<DisplayDevice>("/dev/ttyACM0"); // Fallback
-        
+
         // I2C device path detected
         std::cout << "Detected I2C display device: " << devicePath << std::endl;
         return std::make_shared<I2CDisplayDevice>(devicePath);
-    } 
+    }
     else if (devicePath.find("/dev/ttyACM") == 0 || devicePath.find("/dev/ttyUSB") == 0) {
-        // Serial device path detected  
+        // Serial device path detected
         std::cout << "Detected serial display device: " << devicePath << std::endl;
         return std::make_shared<DisplayDevice>(devicePath);
     }

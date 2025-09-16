@@ -221,9 +221,10 @@ public:
     void exit() override;
     bool handleInput() override;
     std::string getModuleId() const override { return "ping"; }
-
     const std::string& getSelectedIp() const;
-
+    //GPIO input handling methods
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
 private:
     void showIpSelector();
     void startPing();
@@ -259,6 +260,8 @@ public:
     void exit() override;
     bool handleInput() override;
     std::string getModuleId() const override { return "netinfo"; }
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
 
 private:
     // Internal implementation

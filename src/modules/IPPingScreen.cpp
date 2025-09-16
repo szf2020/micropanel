@@ -356,3 +356,96 @@ void IPPingScreen::startPing() {
 const std::string& IPPingScreen::getSelectedIp() const {
     return m_ipSelector->getIp();
 }
+
+
+void IPPingScreen::handleGPIORotation(int direction)
+{
+    std::cout << "IPPingScreen::handleGPIORotation(" << direction << ")" << std::endl;
+
+    bool handled = false;
+    IPPingMenuState previousState = m_state;
+
+    // First try IP selector if we're in IP state
+    if (m_state == IPPingMenuState::MENU_STATE_IP) {
+        handled = m_ipSelector->handleRotation(direction);
+    }
+
+    // If not handled by IP selector, handle menu navigation
+    if (!handled) {
+        if (direction < 0) {
+            // Rotate left - previous menu item
+            switch (m_state) {
+                case IPPingMenuState::MENU_STATE_IP:
+                    m_state = IPPingMenuState::MENU_STATE_EXIT;
+                    break;
+                case IPPingMenuState::MENU_STATE_PING:
+                    m_state = IPPingMenuState::MENU_STATE_IP;
+                    break;
+                case IPPingMenuState::MENU_STATE_EXIT:
+                    m_state = IPPingMenuState::MENU_STATE_PING;
+                    break;
+            }
+        } else {
+            // Rotate right - next menu item
+            switch (m_state) {
+                case IPPingMenuState::MENU_STATE_IP:
+                    m_state = IPPingMenuState::MENU_STATE_PING;
+                    break;
+                case IPPingMenuState::MENU_STATE_PING:
+                    m_state = IPPingMenuState::MENU_STATE_EXIT;
+                    break;
+                case IPPingMenuState::MENU_STATE_EXIT:
+                    m_state = IPPingMenuState::MENU_STATE_IP;
+                    break;
+            }
+        }
+
+        std::cout << "Menu state changed from " << (int)previousState << " to " << (int)m_state << std::endl;
+    }
+
+    // Redraw if state changed or IP selector was handled
+    if (handled || previousState != m_state) {
+        renderMenu(false);
+    }
+
+    m_display->updateActivityTimestamp();
+}
+
+bool IPPingScreen::handleGPIOButtonPress()
+{
+    std::cout << "IPPingScreen::handleGPIOButtonPress() - state: " << (int)m_state << std::endl;
+
+    bool redrawNeeded = false;
+
+    // Handle button based on current state
+    switch (m_state) {
+        case IPPingMenuState::MENU_STATE_IP:
+            // Let IP selector handle button
+            std::cout << "Handling IP selector button press" << std::endl;
+            if (m_ipSelector->handleButton()) {
+                redrawNeeded = true;
+            }
+            break;
+
+        case IPPingMenuState::MENU_STATE_PING:
+            // Start ping
+            std::cout << "Starting ping operation" << std::endl;
+            startPing();
+            redrawNeeded = true;
+            break;
+
+        case IPPingMenuState::MENU_STATE_EXIT:
+            // Exit screen
+            std::cout << "Exit selected - leaving IPPingScreen" << std::endl;
+            m_shouldExit = true;
+            return false; // Exit the screen
+    }
+
+    // Redraw if needed
+    if (redrawNeeded) {
+        renderMenu(false);
+    }
+
+    m_display->updateActivityTimestamp();
+    return !m_shouldExit; // Continue running unless exit was selected
+}

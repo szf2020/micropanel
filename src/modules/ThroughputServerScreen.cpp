@@ -522,3 +522,58 @@ void ThroughputServerScreen::refreshSettings() {
         }
     }
 }
+
+// GPIO support methods
+void ThroughputServerScreen::handleGPIORotation(int direction) {
+    Logger::debug("ThroughputServerScreen: handleGPIORotation called with direction: " + std::to_string(direction));
+
+    // Handle menu navigation
+    int oldSelection = m_selectedOption;
+
+    if (direction < 0) {
+        // Move up
+        if (m_selectedOption > 0) {
+            m_selectedOption--;
+        } else {
+            m_selectedOption = m_options.size() - 1;
+        }
+    } else {
+        // Move down
+        if (m_selectedOption < static_cast<int>(m_options.size() - 1)) {
+            m_selectedOption++;
+        } else {
+            m_selectedOption = 0;
+        }
+    }
+
+    // Only redraw if selection changed
+    if (oldSelection != m_selectedOption) {
+        renderOptions();
+    }
+}
+
+bool ThroughputServerScreen::handleGPIOButtonPress() {
+    Logger::debug("ThroughputServerScreen: handleGPIOButtonPress called");
+
+    // Handle button press based on selected option
+    switch (m_selectedOption) {
+        case 0: // Start
+            if (!isServerRunning()) {
+                startServer();
+                renderOptions(); // Update display to show new state
+            }
+            break;
+
+        case 1: // Stop
+            if (isServerRunning()) {
+                stopServer();
+                renderOptions(); // Update display to show new state
+            }
+            break;
+
+        case 2: // Back
+            return false; // Exit the screen
+    }
+
+    return true; // Continue running
+}

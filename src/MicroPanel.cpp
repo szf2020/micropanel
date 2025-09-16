@@ -913,17 +913,37 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
                             moduleRunning = false;
                         }
                     } else {
-                        // For non-menu modules, check if it's GenericListScreen
-                        auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
-                        if (genericListModule) {
-                            std::cout << "Processing GenericListScreen button press" << std::endl;
-                            if (!genericListModule->handleGPIOButtonPress()) {
+                        // Check for ThroughputServerScreen
+                        auto throughputServerModule = std::dynamic_pointer_cast<ThroughputServerScreen>(module);
+                        if (throughputServerModule) {
+                            std::cout << "Processing ThroughputServerScreen button press" << std::endl;
+                            if (!throughputServerModule->handleGPIOButtonPress()) {
                                 moduleRunning = false;
                             }
-                        } else {
-                            // For other non-menu modules, button press exits
-                            std::cout << "Exiting non-menu module" << std::endl;
-                            moduleRunning = false;
+                        }
+                        // Check for ThroughputClientScreen
+                        else {
+                            auto throughputClientModule = std::dynamic_pointer_cast<ThroughputClientScreen>(module);
+                            if (throughputClientModule) {
+                                std::cout << "Processing ThroughputClientScreen button press" << std::endl;
+                                if (!throughputClientModule->handleGPIOButtonPress()) {
+                                    moduleRunning = false;
+                                }
+                            }
+                            // For non-menu modules, check if it's GenericListScreen
+                            else {
+                                auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
+                                if (genericListModule) {
+                                    std::cout << "Processing GenericListScreen button press" << std::endl;
+                                    if (!genericListModule->handleGPIOButtonPress()) {
+                                        moduleRunning = false;
+                                    }
+                                } else {
+                                    // For other non-menu modules, button press exits
+                                    std::cout << "Exiting non-menu module" << std::endl;
+                                    moduleRunning = false;
+                                }
+                            }
                         }
                     }
                 }
@@ -1009,6 +1029,22 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
         // Set the actual display brightness
         m_display->setBrightness(currentBrightness);
 
+        return;
+    }
+
+    // Add support for ThroughputServerScreen
+    auto throughputServerModule = std::dynamic_pointer_cast<ThroughputServerScreen>(module);
+    if (throughputServerModule) {
+        std::cout << "SUCCESS: ThroughputServerScreen - calling handleGPIORotation" << std::endl;
+        throughputServerModule->handleGPIORotation(direction);
+        return;
+    }
+
+    // Add support for ThroughputClientScreen
+    auto throughputClientModule = std::dynamic_pointer_cast<ThroughputClientScreen>(module);
+    if (throughputClientModule) {
+        std::cout << "SUCCESS: ThroughputClientScreen - calling handleGPIORotation" << std::endl;
+        throughputClientModule->handleGPIORotation(direction);
         return;
     }
 

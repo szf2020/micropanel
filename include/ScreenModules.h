@@ -351,6 +351,10 @@ public:
     bool handleInput() override;
     std::string getModuleId() const override { return "throughputserver"; }
 
+    // GPIO support methods
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
+
 private:
     void renderOptions();
     void startServer();
@@ -417,6 +421,11 @@ public:
     void exit() override;
     bool handleInput() override;
     std::string getModuleId() const override { return "throughputclient"; }
+
+    // GPIO support methods
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
+
 private:
     // Menu state and rendering
     ThroughputClientState m_state;

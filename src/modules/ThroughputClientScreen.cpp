@@ -2077,3 +2077,371 @@ void ThroughputClientScreen::renderTestingScreen() {
 
     Logger::debug("ThroughputClientScreen: Showing testing screen");
 }
+
+// GPIO support methods
+void ThroughputClientScreen::handleGPIORotation(int direction) {
+    Logger::debug("ThroughputClientScreen: handleGPIORotation called with direction: " + std::to_string(direction));
+
+    // Skip rotation during testing or when viewing results
+    if (m_state == ThroughputClientState::MENU_STATE_TESTING ||
+        (m_state == ThroughputClientState::MENU_STATE_RESULTS && m_waitingForButtonPress)) {
+        return;
+    }
+
+    // Special case for IP selector
+    if (m_state == ThroughputClientState::SUBMENU_STATE_SERVER_IP && m_editingIp) {
+        bool handled = m_ipSelector->handleRotation(direction);
+        if (!handled && direction > 0) {
+            // Exit IP editing mode
+            m_editingIp = false;
+            // Move selection to the next item
+            m_submenuSelection = 1;  // Auto-Discover
+            // Redraw the menu with new selection
+            renderServerIPSubmenu(false);
+        }
+        return;
+    }
+
+    // Handle menu navigation based on current state
+    if (m_state == ThroughputClientState::MENU_STATE_START ||
+        m_state == ThroughputClientState::MENU_STATE_START_REVERSE ||
+        m_state == ThroughputClientState::MENU_STATE_PROTOCOL ||
+        m_state == ThroughputClientState::MENU_STATE_DURATION ||
+        m_state == ThroughputClientState::MENU_STATE_BANDWIDTH ||
+        m_state == ThroughputClientState::MENU_STATE_PARALLEL ||
+        m_state == ThroughputClientState::MENU_STATE_SERVER_IP ||
+        m_state == ThroughputClientState::MENU_STATE_BACK) {
+
+        // Main menu navigation
+        if (direction < 0) {
+            // Up
+            switch (m_state) {
+                case ThroughputClientState::MENU_STATE_START:
+                    m_state = ThroughputClientState::MENU_STATE_BACK;
+                    break;
+                case ThroughputClientState::MENU_STATE_START_REVERSE:
+                    m_state = ThroughputClientState::MENU_STATE_START;
+                    break;
+                case ThroughputClientState::MENU_STATE_PROTOCOL:
+                    m_state = ThroughputClientState::MENU_STATE_START_REVERSE;
+                    break;
+                case ThroughputClientState::MENU_STATE_DURATION:
+                    m_state = ThroughputClientState::MENU_STATE_PROTOCOL;
+                    break;
+                case ThroughputClientState::MENU_STATE_BANDWIDTH:
+                    m_state = ThroughputClientState::MENU_STATE_DURATION;
+                    break;
+                case ThroughputClientState::MENU_STATE_PARALLEL:
+                    m_state = ThroughputClientState::MENU_STATE_BANDWIDTH;
+                    break;
+                case ThroughputClientState::MENU_STATE_SERVER_IP:
+                    m_state = ThroughputClientState::MENU_STATE_PARALLEL;
+                    break;
+                case ThroughputClientState::MENU_STATE_BACK:
+                    m_state = ThroughputClientState::MENU_STATE_SERVER_IP;
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            // Down
+            switch (m_state) {
+                case ThroughputClientState::MENU_STATE_START:
+                    m_state = ThroughputClientState::MENU_STATE_START_REVERSE;
+                    break;
+                case ThroughputClientState::MENU_STATE_START_REVERSE:
+                    m_state = ThroughputClientState::MENU_STATE_PROTOCOL;
+                    break;
+                case ThroughputClientState::MENU_STATE_PROTOCOL:
+                    m_state = ThroughputClientState::MENU_STATE_DURATION;
+                    break;
+                case ThroughputClientState::MENU_STATE_DURATION:
+                    m_state = ThroughputClientState::MENU_STATE_BANDWIDTH;
+                    break;
+                case ThroughputClientState::MENU_STATE_BANDWIDTH:
+                    m_state = ThroughputClientState::MENU_STATE_PARALLEL;
+                    break;
+                case ThroughputClientState::MENU_STATE_PARALLEL:
+                    m_state = ThroughputClientState::MENU_STATE_SERVER_IP;
+                    break;
+                case ThroughputClientState::MENU_STATE_SERVER_IP:
+                    m_state = ThroughputClientState::MENU_STATE_BACK;
+                    break;
+                case ThroughputClientState::MENU_STATE_BACK:
+                    m_state = ThroughputClientState::MENU_STATE_START;
+                    break;
+                default:
+                    break;
+            }
+        }
+        renderMainMenu(false);
+    } else if (m_state == ThroughputClientState::SUBMENU_STATE_PROTOCOL) {
+        // Protocol submenu navigation
+        int numOptions = static_cast<int>(m_protocolOptions.size() + 1); // +1 for Back
+        m_submenuSelection = (m_submenuSelection + numOptions + direction) % numOptions;
+        renderProtocolSubmenu(false);
+    } else if (m_state == ThroughputClientState::SUBMENU_STATE_DURATION) {
+        // Duration submenu navigation
+        int numOptions = static_cast<int>(m_durationOptions.size() + 1); // +1 for Back
+        if (direction < 0) {
+            // Move up by 1
+            m_submenuSelection = (m_submenuSelection - 1 + numOptions) % numOptions;
+        } else {
+            // Move down by 1
+            m_submenuSelection = (m_submenuSelection + 1) % numOptions;
+        }
+        renderDurationSubmenu(false);
+    } else if (m_state == ThroughputClientState::SUBMENU_STATE_BANDWIDTH) {
+        // Bandwidth submenu navigation
+        int numOptions = static_cast<int>(m_bandwidthOptions.size() + 1); // +1 for Back
+        if (direction < 0) {
+            m_submenuSelection = (m_submenuSelection - 1 + numOptions) % numOptions;
+        } else {
+            m_submenuSelection = (m_submenuSelection + 1) % numOptions;
+        }
+        renderBandwidthSubmenu(false);
+    } else if (m_state == ThroughputClientState::SUBMENU_STATE_PARALLEL) {
+        // Parallel submenu navigation
+        int numOptions = static_cast<int>(m_parallelOptions.size() + 1); // +1 for Back
+        if (direction < 0) {
+            m_submenuSelection = (m_submenuSelection - 1 + numOptions) % numOptions;
+        } else {
+            m_submenuSelection = (m_submenuSelection + 1) % numOptions;
+        }
+        renderParallelSubmenu(false);
+    } else if (m_state == ThroughputClientState::SUBMENU_STATE_SERVER_IP && !m_editingIp) {
+        // Server IP submenu navigation
+        int numOptions = 3; // IP, Auto-Discover, Back
+        m_submenuSelection = (m_submenuSelection + numOptions + direction) % numOptions;
+        renderServerIPSubmenu(false);
+    } else if (m_state == ThroughputClientState::SUBMENU_STATE_AUTO_DISCOVER && !m_discoveryInProgress) {
+        // Auto-discover results navigation
+        int numOptions = !m_discoveredServers.empty() ?
+                       static_cast<int>(m_discoveredServers.size() + 1) : 1; // +1 for Back
+        m_submenuSelection = (m_submenuSelection + numOptions + direction) % numOptions;
+        renderAutoDiscoverScreen(false);
+    }
+}
+
+bool ThroughputClientScreen::handleGPIOButtonPress() {
+    Logger::debug("ThroughputClientScreen: handleGPIOButtonPress called");
+
+    // Handle button press based on current state
+    switch (m_state) {
+        case ThroughputClientState::MENU_STATE_START:
+            // Start test
+            if (!m_testInProgress) {
+                m_reverseMode = false;
+                startTest();
+                renderMainMenu(true);
+            }
+            break;
+
+        case ThroughputClientState::MENU_STATE_START_REVERSE:
+            // Start reverse test
+            if (!m_testInProgress) {
+                m_reverseMode = true;
+                startTest();
+                renderMainMenu(true);
+            }
+            break;
+
+        case ThroughputClientState::MENU_STATE_PROTOCOL:
+            // Enter protocol submenu
+            m_state = ThroughputClientState::SUBMENU_STATE_PROTOCOL;
+            m_submenuSelection = 0;
+            // Find current protocol in options
+            for (size_t i = 0; i < m_protocolOptions.size(); i++) {
+                if (m_protocolOptions[i] == m_protocol) {
+                    m_submenuSelection = i;
+                    break;
+                }
+            }
+            renderProtocolSubmenu(true);
+            break;
+
+        case ThroughputClientState::MENU_STATE_DURATION:
+            // Enter duration submenu
+            m_state = ThroughputClientState::SUBMENU_STATE_DURATION;
+            m_submenuSelection = 0;
+            // Find current duration in options
+            for (size_t i = 0; i < m_durationOptions.size(); i++) {
+                if (m_durationOptions[i] == m_duration) {
+                    m_submenuSelection = i;
+                    break;
+                }
+            }
+            renderDurationSubmenu(true);
+            break;
+
+        case ThroughputClientState::MENU_STATE_BANDWIDTH:
+            // Enter bandwidth submenu
+            m_state = ThroughputClientState::SUBMENU_STATE_BANDWIDTH;
+            m_submenuSelection = 0;
+            // Find current bandwidth in options
+            for (size_t i = 0; i < m_bandwidthOptions.size(); i++) {
+                if (m_bandwidthOptions[i] == m_bandwidth) {
+                    m_submenuSelection = i;
+                    break;
+                }
+            }
+            renderBandwidthSubmenu(true);
+            break;
+
+        case ThroughputClientState::MENU_STATE_PARALLEL:
+            // Enter parallel submenu
+            m_state = ThroughputClientState::SUBMENU_STATE_PARALLEL;
+            m_submenuSelection = 0;
+            // Find current parallel in options
+            for (size_t i = 0; i < m_parallelOptions.size(); i++) {
+                if (m_parallelOptions[i] == m_parallel) {
+                    m_submenuSelection = i;
+                    break;
+                }
+            }
+            renderParallelSubmenu(true);
+            break;
+
+        case ThroughputClientState::MENU_STATE_SERVER_IP:
+            // Enter server IP submenu
+            m_state = ThroughputClientState::SUBMENU_STATE_SERVER_IP;
+            m_submenuSelection = 0;
+            m_editingIp = false;
+            renderServerIPSubmenu(true);
+            break;
+
+        case ThroughputClientState::MENU_STATE_BACK:
+            // Exit screen
+            return false;
+
+        // Handle submenu states
+        case ThroughputClientState::SUBMENU_STATE_PROTOCOL:
+            if (m_submenuSelection < static_cast<int>(m_protocolOptions.size())) {
+                // Select protocol
+                m_protocol = m_protocolOptions[m_submenuSelection];
+                m_state = ThroughputClientState::MENU_STATE_PROTOCOL;
+                renderMainMenu(true);
+            } else {
+                // Back option selected
+                m_state = ThroughputClientState::MENU_STATE_PROTOCOL;
+                renderMainMenu(true);
+            }
+            break;
+
+        case ThroughputClientState::SUBMENU_STATE_DURATION:
+            if (m_submenuSelection < static_cast<int>(m_durationOptions.size())) {
+                // Select duration
+                m_duration = m_durationOptions[m_submenuSelection];
+                m_state = ThroughputClientState::MENU_STATE_DURATION;
+                renderMainMenu(true);
+            } else {
+                // Back option selected
+                m_state = ThroughputClientState::MENU_STATE_DURATION;
+                renderMainMenu(true);
+            }
+            break;
+
+        case ThroughputClientState::SUBMENU_STATE_BANDWIDTH:
+            if (m_submenuSelection < static_cast<int>(m_bandwidthOptions.size())) {
+                // Select bandwidth
+                m_bandwidth = m_bandwidthOptions[m_submenuSelection];
+                m_state = ThroughputClientState::MENU_STATE_BANDWIDTH;
+                renderMainMenu(true);
+            } else {
+                // Back option selected
+                m_state = ThroughputClientState::MENU_STATE_BANDWIDTH;
+                renderMainMenu(true);
+            }
+            break;
+
+        case ThroughputClientState::SUBMENU_STATE_PARALLEL:
+            if (m_submenuSelection < static_cast<int>(m_parallelOptions.size())) {
+                // Select parallel
+                m_parallel = m_parallelOptions[m_submenuSelection];
+                m_state = ThroughputClientState::MENU_STATE_PARALLEL;
+                renderMainMenu(true);
+            } else {
+                // Back option selected
+                m_state = ThroughputClientState::MENU_STATE_PARALLEL;
+                renderMainMenu(true);
+            }
+            break;
+
+        case ThroughputClientState::SUBMENU_STATE_SERVER_IP:
+            if (m_editingIp) {
+                // Handle IP editor button press
+                if (m_ipSelector->handleButton()) {
+                    // Continue editing
+                } else {
+                    // IP editing completed
+                    m_editingIp = false;
+                    m_serverIp = m_ipSelector->getIp();
+                    renderServerIPSubmenu(false);
+                }
+            } else if (m_submenuSelection == 0) {
+                // Start editing IP
+                m_editingIp = true;
+                m_ipSelector->setIp(m_serverIp);
+                renderServerIPSubmenu(false);
+            } else if (m_submenuSelection == 1) {
+                // Auto-discover
+                if (isAvahiAvailable()) {
+                    m_state = ThroughputClientState::SUBMENU_STATE_AUTO_DISCOVER;
+                    m_submenuSelection = 0;
+                    startDiscovery();
+                    renderAutoDiscoverScreen(true);
+                } else {
+                    m_statusMessage = "Avahi not available";
+                    m_statusChanged = true;
+                }
+            } else {
+                // Back option selected
+                m_state = ThroughputClientState::MENU_STATE_SERVER_IP;
+                renderMainMenu(true);
+            }
+            break;
+
+        case ThroughputClientState::SUBMENU_STATE_AUTO_DISCOVER:
+            if (!m_discoveryInProgress) {
+                if (!m_discoveredServers.empty()) {
+                    if (m_submenuSelection < static_cast<int>(m_discoveredServers.size())) {
+                        // Select server
+                        selectServer(m_submenuSelection);
+                        m_state = ThroughputClientState::MENU_STATE_SERVER_IP;
+                        renderMainMenu(true);
+                    } else {
+                        // Back option selected
+                        m_state = ThroughputClientState::SUBMENU_STATE_SERVER_IP;
+                        m_submenuSelection = 0;
+                        renderServerIPSubmenu(true);
+                    }
+                } else {
+                    // No servers found, just go back
+                    m_state = ThroughputClientState::SUBMENU_STATE_SERVER_IP;
+                    m_submenuSelection = 0;
+                    renderServerIPSubmenu(true);
+                }
+            }
+            break;
+
+        case ThroughputClientState::MENU_STATE_RESULTS:
+            if (m_waitingForButtonPress) {
+                // Return to main menu when any button is pressed
+                m_waitingForButtonPress = false;
+                m_state = ThroughputClientState::MENU_STATE_START;
+                Logger::debug("ThroughputClientScreen: Button pressed on results screen, returning to main menu");
+                renderMainMenu(true);
+            }
+            break;
+
+        case ThroughputClientState::MENU_STATE_TESTING:
+            // For testing state, you could implement test cancellation here if needed
+            // For now, ignore button presses during testing
+            break;
+
+        default:
+            break;
+    }
+
+    return true; // Continue running
+}

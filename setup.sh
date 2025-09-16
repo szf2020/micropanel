@@ -128,7 +128,7 @@ BINARY_PATH="$CURRENT_PATH/build/micropanel"
 
 #for pios, use local gpio-keys and i2c for driving ssd1306
 if [ "$TYPE" = "pios" ]; then
-    PIOS_ARGS="-i gpio -s /dev/i2c-1 "
+    PIOS_ARGS="-i gpio -s /dev/i2c-3 "
 fi
 
 # Update the service file with correct paths

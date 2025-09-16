@@ -95,6 +95,20 @@ When creating new interactive screen modules that need GPIO input support:
 4. Add module support to the button press handling section in `MicroPanel::runModuleWithGPIOInput()`
 5. Examples: `NetInfoScreen`, `IPPingScreen`, `ThroughputServerScreen`, `ThroughputClientScreen`
 
+## Recent Development History
+
+### GPIO Support Implementation (Latest)
+- **ThroughputServerScreen & ThroughputClientScreen**: Added full GPIO support with `handleGPIORotation()` and `handleGPIOButtonPress()` methods
+- **IP Address Picker Fix**: Fixed custom IP selection in ThroughputClientScreen by adding missing `m_ipSelector->handleButton()` call to activate cursor mode
+- **Navigation Arrow Fix**: Fixed Server IP submenu navigation using proper direction checking instead of problematic modulo math
+- **Main Menu Navigation**: Fixed GPIO mode "Main Menu" vs "Back" behavior by adding missing flag propagation logic in `MenuScreenModule::handleGPIOButtonPress()`
+- **UI Optimization**: Reduced GenericListScreen flicker by eliminating bulk clearing and implementing line-by-line updates with proper padding
+
+### Known Issues & Limitations
+- **GenericListScreen Performance**: Navigation has some lag due to required display command delays (10ms per line)
+- **Hardware Dependency**: Requires actual µPanel hardware for full testing
+- **GPIO vs USB Behavior**: Some subtle differences in behavior between GPIO and USB input modes may still exist
+
 **Service Management:**
 ```bash
 # Control systemd service

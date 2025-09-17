@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(MicroPanel VERSION 2.0.0 LANGUAGES CXX)
+project(MicroPanel VERSION 2.0.0 LANGUAGES C CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 14)
@@ -114,6 +114,9 @@ set(SOURCES
 # Define executable
 add_executable(micropanel ${SOURCES})
 
+# Compile patch-generator utility
+add_executable(patch-generator utils/patch-generator.c)
+
 # Link libraries in proper order
 target_link_libraries(micropanel
     PRIVATE
@@ -128,12 +131,56 @@ target_link_libraries(micropanel
 option(INSTALL_ALL_CONFIGS "Install all configuration files" OFF)
 set(INSTALL_SCREEN "" CACHE STRING "Specific screen config to install (e.g., config-pios.json)")
 option(INSTALL_SYSTEMD_SERVICE "Install systemd service file" OFF)
+option(INSTALL_HELPER_SCRIPTS "Install helper shell scripts" OFF)
+option(INSTALL_MEDIA_FILES "Install media files to share/micropanel/media" OFF)
 set(SERVICE_USER "root" CACHE STRING "User to run micropanel service as")
 
 # Install target
-install(TARGETS micropanel
+install(TARGETS micropanel patch-generator
     RUNTIME DESTINATION bin
 )
+
+# Install init.d script for SysV init systems (only if systemd service is not installed)
+if(NOT INSTALL_SYSTEMD_SERVICE)
+    install(FILES scripts/S99Micropanel
+        DESTINATION etc/init.d
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    )
+    message(STATUS "Will install SysV init script to etc/init.d/micropanel")
+endif()
+
+# Install helper shell scripts
+if(INSTALL_HELPER_SCRIPTS)
+    install(FILES
+        scripts/dhcp-net-settings.sh
+        scripts/list-images.sh
+        scripts/pi-config-txt.sh
+        scripts/play-video.sh
+        scripts/stop-video.sh
+        scripts/buzzer.sh
+        scripts/dhcp-net-settings-pios.sh
+        scripts/hdmi-patch.sh
+        scripts/list-videos.sh
+        scripts/play-image.sh
+        scripts/stop-image.sh
+        DESTINATION bin
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    )
+    message(STATUS "Will install helper scripts to bin/")
+endif()
+
+# Install media files
+if(INSTALL_MEDIA_FILES)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/media")
+        install(DIRECTORY media/
+            DESTINATION share/micropanel/media
+            FILES_MATCHING PATTERN "*"
+        )
+        message(STATUS "Will install media files to share/micropanel/media/")
+    else()
+        message(WARNING "Media directory not found at ${CMAKE_CURRENT_SOURCE_DIR}/media")
+    endif()
+endif()
 
 # Install configuration files
 if(INSTALL_ALL_CONFIGS)

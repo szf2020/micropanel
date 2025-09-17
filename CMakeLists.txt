@@ -6,49 +6,63 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Add compiler warnings
+# Add compiler warnings and optimizations
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_compile_options(-Wall -Wextra -Wpedantic -Os -ffunction-sections -fdata-sections)
+    add_link_options(-Wl,--gc-sections)
 endif()
 
-# Find required packages
+# Find required packages with better error handling
 find_package(Threads REQUIRED)
+
+# Find udev library
 find_library(UDEV_LIBRARY udev REQUIRED)
+if(NOT UDEV_LIBRARY)
+    message(FATAL_ERROR "libudev not found! Install with: sudo apt-get install libudev-dev")
+endif()
+
+# Find I2C library with proper error handling
+find_library(I2C_LIBRARY i2c)
+if(NOT I2C_LIBRARY)
+    message(FATAL_ERROR "libi2c not found! Install with: sudo apt-get install libi2c-dev i2c-tools")
+endif()
+
+# Check for i2c headers
+find_path(I2C_INCLUDE_DIR 
+    NAMES i2c/smbus.h
+    PATHS /usr/include /usr/local/include
+)
+if(NOT I2C_INCLUDE_DIR)
+    message(FATAL_ERROR "i2c/smbus.h not found! Install with: sudo apt-get install libi2c-dev")
+endif()
 
 # Find libcurl for SpeedTestScreen
-find_package(CURL QUIET)
+find_package(CURL REQUIRED)
 if(NOT CURL_FOUND)
-    message(STATUS "libcurl not found!")
-    message(FATAL_ERROR "Error!!! Missing libcurl library, try sudo apt-get install libcurl4-openssl-dev")
+    message(FATAL_ERROR "libcurl not found! Install with: sudo apt-get install libcurl4-openssl-dev")
 endif()
-include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CURL_INCLUDE_DIRS}
-)
 
-# Include directories
-include_directories(
-	${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
+# Find nlohmann/json
 find_package(nlohmann_json 3.7.3 QUIET)
 if(nlohmann_json_FOUND)
     message(STATUS "Using system-installed nlohmann/json")
 else()
-#message(STATUS "nlohmann/json not found in system, using bundled version")
-    # Option 2: Include the single header file
-    # This assumes you've placed json.hpp in a "vendor/nlohmann" folder in your project
-    #nclude_directories(${CMAKE_CURRENT_SOURCE_DIR}/vendor)
-    message(STATUS "nlohmann/json not found!!")
-    message( FATAL_ERROR "Error!!! Missing nlohmann json library, try sudo apt-get install nlohmann-json3-dev" )
+    message(FATAL_ERROR "nlohmann/json not found! Install with: sudo apt-get install nlohmann-json3-dev")
 endif()
 
+# Include directories
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CURL_INCLUDE_DIRS}
+    ${I2C_INCLUDE_DIR}
+)
+
+# Define source files by directory
 set(SOURCES_PERSISTENCE
     src/PersistentStorage.cpp
     src/ModuleDependency.cpp
 )
 
-# Define source files by directory
 set(SOURCES_DEVICES
     src/devices/DisplayDevice.cpp
     src/devices/I2CDisplayDevice.cpp
@@ -97,50 +111,112 @@ set(SOURCES
     ${SOURCES_MAIN}
 )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic -Os -ffunction-sections -fdata-sections)
-    # Link-time optimization can significantly reduce size
-    add_link_options(-Wl,--gc-sections)
-endif()
-
 # Define executable
 add_executable(micropanel ${SOURCES})
 
-# Link libraries
+# Link libraries in proper order
 target_link_libraries(micropanel
     PRIVATE
     Threads::Threads
     ${UDEV_LIBRARY}
     ${CURL_LIBRARIES}
-    i2c
+    ${I2C_LIBRARY}
+    nlohmann_json::nlohmann_json
 )
+
+# Configuration options
+option(INSTALL_ALL_CONFIGS "Install all configuration files" OFF)
+set(INSTALL_SCREEN "" CACHE STRING "Specific screen config to install (e.g., config-pios.json)")
+option(INSTALL_SYSTEMD_SERVICE "Install systemd service file" OFF)
+set(SERVICE_USER "root" CACHE STRING "User to run micropanel service as")
 
 # Install target
 install(TARGETS micropanel
     RUNTIME DESTINATION bin
 )
 
-# Strip the binary to reduce size
-add_custom_command(TARGET micropanel POST_BUILD
-    COMMAND ${CMAKE_STRIP} micropanel
-    COMMENT "Stripping binary for reduced size"
-)
+# Install configuration files
+if(INSTALL_ALL_CONFIGS)
+    # Install all configuration files from screens directory
+    install(DIRECTORY screens/
+        DESTINATION etc/micropanel/screens
+        FILES_MATCHING PATTERN "*.json"
+        PATTERN "*.sh" EXCLUDE
+    )
+    message(STATUS "Will install all configuration files to etc/micropanel/screens/")
+elseif(INSTALL_SCREEN)
+    # Install specific configuration file
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/screens/${INSTALL_SCREEN}")
+        install(FILES "screens/${INSTALL_SCREEN}"
+            DESTINATION etc/micropanel
+            RENAME config.json
+        )
+        message(STATUS "Will install ${INSTALL_SCREEN} as etc/micropanel/config.json")
+    else()
+        message(FATAL_ERROR "Configuration file screens/${INSTALL_SCREEN} not found!")
+    endif()
+else()
+    # Default: install screens.json as config.json if it exists
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/screens/screens.json")
+        install(FILES "screens/screens.json"
+            DESTINATION etc/micropanel
+            RENAME config.json
+        )
+        message(STATUS "Will install screens.json as etc/micropanel/config.json (default)")
+    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/screens/micropanel-config.json")
+        install(FILES "screens/micropanel-config.json"
+            DESTINATION etc/micropanel
+            RENAME config.json
+        )
+        message(STATUS "Will install micropanel-config.json as etc/micropanel/config.json (fallback)")
+    else()
+        message(WARNING "No default configuration file found in screens/ directory")
+    endif()
+endif()
 
-# Create a systemd service file
-#configure_file(
-#    ${CMAKE_CURRENT_SOURCE_DIR}/micropanel.service.in
-#    ${CMAKE_CURRENT_BINARY_DIR}/micropanel.service
-#    @ONLY
-#)
+# Install additional resources if they exist (optional)
+option(INSTALL_ADDITIONAL_CONFIGS "Install configs/ directory" OFF)
+if(INSTALL_ADDITIONAL_CONFIGS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs")
+    install(DIRECTORY configs/
+        DESTINATION etc/micropanel/configs
+        FILES_MATCHING PATTERN "*"
+    )
+    message(STATUS "Will install configs/ directory to etc/micropanel/configs/")
+endif()
 
-# Install systemd service if requested
-#option(INSTALL_SYSTEMD_SERVICE "Install systemd service file" OFF)
-#if(INSTALL_SYSTEMD_SERVICE)
-#    install(FILES
-#        ${CMAKE_CURRENT_BINARY_DIR}/micropanel.service
-#        DESTINATION /etc/systemd/system
-#    )
-#endif()
+# Configure and install systemd service file
+if(INSTALL_SYSTEMD_SERVICE)
+    # Configure the service file with proper paths
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/micropanel.service.in
+        ${CMAKE_CURRENT_BINARY_DIR}/micropanel.service
+        @ONLY
+    )
+    
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/micropanel.service
+        DESTINATION lib/systemd/system
+    )
+    message(STATUS "Will install systemd service file")
+    message(STATUS "  Service will run as: ${SERVICE_USER}")
+    message(STATUS "  Binary path: ${CMAKE_INSTALL_PREFIX}/bin/micropanel")
+    message(STATUS "  Config path: ${CMAKE_INSTALL_PREFIX}/etc/micropanel/config.json")
+endif()
+
+# Strip the binary to reduce size (only in Release mode)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_custom_command(TARGET micropanel POST_BUILD
+        COMMAND ${CMAKE_STRIP} $<TARGET_FILE:micropanel>
+        COMMENT "Stripping binary for reduced size"
+    )
+endif()
+
+# Print configuration summary
+message(STATUS "MicroPanel Configuration Summary:")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  C++ standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "  I2C library: ${I2C_LIBRARY}")
+message(STATUS "  UDEV library: ${UDEV_LIBRARY}")
+message(STATUS "  CURL libraries: ${CURL_LIBRARIES}")
 
 # Add uninstall target
 configure_file(

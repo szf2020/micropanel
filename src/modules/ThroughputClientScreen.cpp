@@ -377,48 +377,46 @@ void ThroughputClientScreen::renderMainMenu(bool fullRedraw) {
         }
     }
 
-    // Determine if we need to show the last 6 items
-    // Since we added a new item, we need to adjust this pagination logic
-    bool showLast6Items = (selectedIndex >= 6); // Show last 6 when on item 6 or greater
+    // Use smooth scrolling like GenericListScreen instead of pagination
+    const int MAX_VISIBLE_ITEMS = 6;
+    static int firstVisibleItem = 0;
 
-    // Keep track of whether we've changed pages
-    static bool wasShowingLast6Items = false;
-    bool pageChanged = (wasShowingLast6Items != showLast6Items);
-    wasShowingLast6Items = showLast6Items;
+    // Calculate scroll position to keep selected item visible (like GenericListScreen)
+    if (selectedIndex < firstVisibleItem) {
+        firstVisibleItem = selectedIndex;
+    } else if (selectedIndex >= firstVisibleItem + MAX_VISIBLE_ITEMS) {
+        firstVisibleItem = selectedIndex - MAX_VISIBLE_ITEMS + 1;
+    }
 
     // Only do a full menu redraw when necessary
-    if (fullRedraw || pageChanged) {
-        // Clear the screen or menu area
-        if (fullRedraw) {
-            m_display->clear();
-            usleep(Config::DISPLAY_CMD_DELAY * 3);
+    if (fullRedraw) {
+        m_display->clear();
+        usleep(Config::DISPLAY_CMD_DELAY * 3);
 
-            // Draw header with status
-            std::string headerText = m_testInProgress ? "Client(Running)" : "Client(Ready)";
-            m_display->drawText(0, 0, headerText);
-            usleep(Config::DISPLAY_CMD_DELAY);
+        // Draw header with status
+        std::string headerText = m_testInProgress ? "Client(Running)" : "Client(Ready)";
+        m_display->drawText(0, 0, headerText);
+        usleep(Config::DISPLAY_CMD_DELAY);
 
-            // Draw separator
-            m_display->drawText(0, 8, "----------------");
+        // Draw separator
+        m_display->drawText(0, 8, "----------------");
+        usleep(Config::DISPLAY_CMD_DELAY);
+    } else {
+        // For minimal updates, just clear selection markers like GenericListScreen
+        for (int i = 0; i < MAX_VISIBLE_ITEMS; i++) {
+            int yPos = 16 + (i * 8);
+            m_display->drawText(0, yPos, " ");
             usleep(Config::DISPLAY_CMD_DELAY);
-        } else if (pageChanged) {
-            // Only clear the menu area, not the header
-            for (int i = 0; i < 6; i++) {
-                int yPos = 16 + (i * 8);
-                m_display->drawText(0, yPos, "                ");
-                usleep(Config::DISPLAY_CMD_DELAY);
-            }
         }
+    }
 
-        // Determine the range of menu items to display
-        // We need to adjust this for 8 total menu items instead of 7
-        int startIndex = showLast6Items ? 2 : 0; // Skip first two items when showing last 6
-        int endIndex = showLast6Items ? 8 : 6;   // Show items 2-8 or 0-6
+    // Draw visible menu items using smooth scrolling
+    int lastVisibleItem = std::min(firstVisibleItem + MAX_VISIBLE_ITEMS,
+                                  static_cast<int>(menuStates.size()));
 
-        // Draw the visible menu items
-        int yPos = 16; // Starting Y position after header and separator
-
-        for (int i = startIndex; i < endIndex; i++) {
+    for (int i = firstVisibleItem; i < lastVisibleItem; i++) {
+        int displayIndex = i - firstVisibleItem;
+        int yPos = 16 + (displayIndex * 8);
             ThroughputClientState itemState = menuStates[i];
             std::string itemText;
             bool isSelected = (m_state == itemState);
@@ -470,35 +468,21 @@ void ThroughputClientScreen::renderMainMenu(bool fullRedraw) {
                 default:
                     continue; // Skip submenu states
             }
+
+            // Pad to ensure line is fully overwritten (like GenericListScreen)
+            while (itemText.length() < 16) {
+                itemText += " ";
+            }
+
             m_display->drawText(0, yPos, itemText);
             usleep(Config::DISPLAY_CMD_DELAY);
-            yPos += 8; // 8 pixel spacing
-        }
-    } else {
-        // Just update the selection markers
-        int startIndex = showLast6Items ? 2 : 0;
-
-        // First, clear all selection markers in the visible area
-        for (int i = 0; i < 6; i++) {
-            m_display->drawText(0, 16 + (i * 8), " ");
-            usleep(Config::DISPLAY_CMD_DELAY);
         }
 
-        // Then draw only the current selection marker
-        // Find which visible position corresponds to current selection
-        int visiblePos = -1;
-        for (size_t i = 0; i < menuStates.size(); i++) {
-            if (menuStates[i] == m_state) {
-                visiblePos = static_cast<int>(i) - startIndex;
-                break;
-            }
-        }
-
-        // Draw the current selection marker if it's visible
-        if (visiblePos >= 0 && visiblePos < 6) {
-            m_display->drawText(0, 16 + (visiblePos * 8), ">");
-            usleep(Config::DISPLAY_CMD_DELAY);
-        }
+    // Clear any remaining lines if there are fewer items than max visible
+    for (int i = lastVisibleItem - firstVisibleItem; i < MAX_VISIBLE_ITEMS; i++) {
+        int yPos = 16 + (i * 8);
+        m_display->drawText(0, yPos, "                ");
+        usleep(Config::DISPLAY_CMD_DELAY);
     }
 
     // Update status line if needed
@@ -2162,66 +2146,37 @@ void ThroughputClientScreen::handleGPIORotation(int direction) {
         m_state == ThroughputClientState::MENU_STATE_SERVER_IP ||
         m_state == ThroughputClientState::MENU_STATE_BACK) {
 
-        // Main menu navigation
+        // Main menu navigation with bounded movement (like GenericListScreen)
+        // Find current position in the menu states array
+        const std::vector<ThroughputClientState> menuStates = {
+            ThroughputClientState::MENU_STATE_START,
+            ThroughputClientState::MENU_STATE_START_REVERSE,
+            ThroughputClientState::MENU_STATE_PROTOCOL,
+            ThroughputClientState::MENU_STATE_DURATION,
+            ThroughputClientState::MENU_STATE_BANDWIDTH,
+            ThroughputClientState::MENU_STATE_PARALLEL,
+            ThroughputClientState::MENU_STATE_SERVER_IP,
+            ThroughputClientState::MENU_STATE_BACK
+        };
+
+        int currentIndex = 0;
+        for (size_t i = 0; i < menuStates.size(); i++) {
+            if (menuStates[i] == m_state) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        // Bounded navigation - stop at first/last item (no wraparound)
         if (direction < 0) {
-            // Up
-            switch (m_state) {
-                case ThroughputClientState::MENU_STATE_START:
-                    m_state = ThroughputClientState::MENU_STATE_BACK;
-                    break;
-                case ThroughputClientState::MENU_STATE_START_REVERSE:
-                    m_state = ThroughputClientState::MENU_STATE_START;
-                    break;
-                case ThroughputClientState::MENU_STATE_PROTOCOL:
-                    m_state = ThroughputClientState::MENU_STATE_START_REVERSE;
-                    break;
-                case ThroughputClientState::MENU_STATE_DURATION:
-                    m_state = ThroughputClientState::MENU_STATE_PROTOCOL;
-                    break;
-                case ThroughputClientState::MENU_STATE_BANDWIDTH:
-                    m_state = ThroughputClientState::MENU_STATE_DURATION;
-                    break;
-                case ThroughputClientState::MENU_STATE_PARALLEL:
-                    m_state = ThroughputClientState::MENU_STATE_BANDWIDTH;
-                    break;
-                case ThroughputClientState::MENU_STATE_SERVER_IP:
-                    m_state = ThroughputClientState::MENU_STATE_PARALLEL;
-                    break;
-                case ThroughputClientState::MENU_STATE_BACK:
-                    m_state = ThroughputClientState::MENU_STATE_SERVER_IP;
-                    break;
-                default:
-                    break;
+            // Move up
+            if (currentIndex > 0) {
+                m_state = menuStates[currentIndex - 1];
             }
         } else {
-            // Down
-            switch (m_state) {
-                case ThroughputClientState::MENU_STATE_START:
-                    m_state = ThroughputClientState::MENU_STATE_START_REVERSE;
-                    break;
-                case ThroughputClientState::MENU_STATE_START_REVERSE:
-                    m_state = ThroughputClientState::MENU_STATE_PROTOCOL;
-                    break;
-                case ThroughputClientState::MENU_STATE_PROTOCOL:
-                    m_state = ThroughputClientState::MENU_STATE_DURATION;
-                    break;
-                case ThroughputClientState::MENU_STATE_DURATION:
-                    m_state = ThroughputClientState::MENU_STATE_BANDWIDTH;
-                    break;
-                case ThroughputClientState::MENU_STATE_BANDWIDTH:
-                    m_state = ThroughputClientState::MENU_STATE_PARALLEL;
-                    break;
-                case ThroughputClientState::MENU_STATE_PARALLEL:
-                    m_state = ThroughputClientState::MENU_STATE_SERVER_IP;
-                    break;
-                case ThroughputClientState::MENU_STATE_SERVER_IP:
-                    m_state = ThroughputClientState::MENU_STATE_BACK;
-                    break;
-                case ThroughputClientState::MENU_STATE_BACK:
-                    m_state = ThroughputClientState::MENU_STATE_START;
-                    break;
-                default:
-                    break;
+            // Move down
+            if (currentIndex < static_cast<int>(menuStates.size() - 1)) {
+                m_state = menuStates[currentIndex + 1];
             }
         }
         renderMainMenu(false);

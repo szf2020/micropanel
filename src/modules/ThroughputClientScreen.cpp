@@ -522,6 +522,14 @@ void ThroughputClientScreen::renderProtocolSubmenu(bool fullRedraw) {
         usleep(Config::DISPLAY_CMD_DELAY);
     }
 
+    // If not full redraw, just clear selection markers
+    if (!fullRedraw) {
+        for (size_t i = 0; i <= m_protocolOptions.size(); i++) { // +1 for Back option
+            m_display->drawText(0, 16 + (i * 10), " ");
+            usleep(Config::DISPLAY_CMD_DELAY);
+        }
+    }
+
     // Draw protocol options
     int yPos = 16;
 
@@ -529,6 +537,12 @@ void ThroughputClientScreen::renderProtocolSubmenu(bool fullRedraw) {
         std::string optionText = (m_submenuSelection == static_cast<int>(i)) ?
                                 ">" + m_protocolOptions[i] :
                                 " " + m_protocolOptions[i];
+
+        // Pad to ensure line is fully overwritten (like GenericListScreen)
+        while (optionText.length() < 16) {
+            optionText += " ";
+        }
+
         m_display->drawText(0, yPos, optionText);
         usleep(Config::DISPLAY_CMD_DELAY);
         yPos += 10;
@@ -538,6 +552,12 @@ void ThroughputClientScreen::renderProtocolSubmenu(bool fullRedraw) {
     std::string backText = (m_submenuSelection == static_cast<int>(m_protocolOptions.size())) ?
                          ">Back" :
                          " Back";
+
+    // Pad to ensure line is fully overwritten
+    while (backText.length() < 16) {
+        backText += " ";
+    }
+
     m_display->drawText(0, yPos, backText);
     usleep(Config::DISPLAY_CMD_DELAY);
 }
@@ -606,13 +626,18 @@ void ThroughputClientScreen::renderDurationSubmenu(bool fullRedraw) {
             itemText = " " + itemText;
         }
 
+        // Pad to ensure line is fully overwritten (like GenericListScreen)
+        while (itemText.length() < 16) {
+            itemText += " ";
+        }
+
         // Draw the item
         m_display->drawText(0, 16 + (i * 8), itemText);
         usleep(Config::DISPLAY_CMD_DELAY);
     }
 
-    // Add scroll indicators if needed
-    if (totalItems > MAX_VISIBLE_ITEMS) {
+    // Only draw scroll indicators on full redraw to reduce flicker
+    if (fullRedraw && totalItems > MAX_VISIBLE_ITEMS) {
         // Up arrow for items above
         if (scrollOffset > 0) {
             m_display->drawText(122, 16, "^");
@@ -702,13 +727,18 @@ void ThroughputClientScreen::renderBandwidthSubmenu(bool fullRedraw) {
             itemText = " " + itemText;
         }
 
+        // Pad to ensure line is fully overwritten (like GenericListScreen)
+        while (itemText.length() < 16) {
+            itemText += " ";
+        }
+
         // Draw the item
         m_display->drawText(0, 16 + (i * 8), itemText);
         usleep(Config::DISPLAY_CMD_DELAY);
     }
 
-    // Add scroll indicators if needed
-    if (totalItems > MAX_VISIBLE_ITEMS) {
+    // Only draw scroll indicators on full redraw to reduce flicker
+    if (fullRedraw && totalItems > MAX_VISIBLE_ITEMS) {
         // Up arrow for items above
         if (scrollOffset > 0) {
             m_display->drawText(122, 16, "^");
@@ -744,6 +774,14 @@ void ThroughputClientScreen::renderParallelSubmenu(bool fullRedraw) {
         usleep(Config::DISPLAY_CMD_DELAY);
     }
 
+    // If not full redraw, just clear selection markers
+    if (!fullRedraw) {
+        for (size_t i = 0; i <= m_parallelOptions.size(); i++) { // +1 for Back option
+            m_display->drawText(0, 16 + (i * 8), " ");
+            usleep(Config::DISPLAY_CMD_DELAY);
+        }
+    }
+
     // Draw parallel options
     int yPos = 16;
 
@@ -751,6 +789,12 @@ void ThroughputClientScreen::renderParallelSubmenu(bool fullRedraw) {
         std::string optionText = (m_submenuSelection == static_cast<int>(i)) ?
                                 ">" + std::to_string(m_parallelOptions[i]) :
                                 " " + std::to_string(m_parallelOptions[i]);
+
+        // Pad to ensure line is fully overwritten (like GenericListScreen)
+        while (optionText.length() < 16) {
+            optionText += " ";
+        }
+
         m_display->drawText(0, yPos, optionText);
         usleep(Config::DISPLAY_CMD_DELAY);
         yPos += 8;
@@ -760,6 +804,12 @@ void ThroughputClientScreen::renderParallelSubmenu(bool fullRedraw) {
     std::string backText = (m_submenuSelection == static_cast<int>(m_parallelOptions.size())) ?
                          ">Back" :
                          " Back";
+
+    // Pad to ensure line is fully overwritten
+    while (backText.length() < 16) {
+        backText += " ";
+    }
+
     m_display->drawText(0, yPos, backText);
     usleep(Config::DISPLAY_CMD_DELAY);
 }

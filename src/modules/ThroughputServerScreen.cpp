@@ -150,7 +150,7 @@ bool ThroughputServerScreen::handleInput() {
 
                 // Only redraw if selection changed
                 if (oldSelection != m_selectedOption) {
-                    renderOptions();
+                    renderOptions(false); // Use minimal update to reduce flicker
                 }
 
                 m_display->updateActivityTimestamp();
@@ -190,20 +190,42 @@ bool ThroughputServerScreen::handleInput() {
 }
 
 void ThroughputServerScreen::renderOptions() {
+    renderOptions(true); // Default to full redraw
+}
+
+void ThroughputServerScreen::renderOptions(bool fullRedraw) {
     bool serverRunning = isServerRunning();
 
-    // Clear display first
-    m_display->clear();
-    usleep(Config::DISPLAY_CMD_DELAY * 3);
+    if (fullRedraw) {
+        // Clear display first
+        m_display->clear();
+        usleep(Config::DISPLAY_CMD_DELAY * 3);
 
-    // Draw header with server status
-    std::string headerText = serverRunning ? "Server(Running)" : "Server(Stopped)";
-    m_display->drawText(0, 0, headerText);
-    usleep(Config::DISPLAY_CMD_DELAY);
+        // Draw header with server status
+        std::string headerText = serverRunning ? "Server(Running)" : "Server(Stopped)";
+        m_display->drawText(0, 0, headerText);
+        usleep(Config::DISPLAY_CMD_DELAY);
 
-    // Draw separator
-    m_display->drawText(0, 8, "----------------");
-    usleep(Config::DISPLAY_CMD_DELAY);
+        // Draw separator
+        m_display->drawText(0, 8, "----------------");
+        usleep(Config::DISPLAY_CMD_DELAY);
+
+        // Draw IP address at position 48
+        m_display->drawText(0, 48, m_localIp);
+        usleep(Config::DISPLAY_CMD_DELAY);
+
+        // Show port information at position 56
+        std::string portInfo = "Port:" + std::to_string(m_port);
+        m_display->drawText(0, 56, portInfo);
+        usleep(Config::DISPLAY_CMD_DELAY);
+    } else {
+        // Just clear selection markers for minimal update
+        for (size_t i = 0; i < m_options.size(); i++) {
+            int yPos = 16 + (i * 10);
+            m_display->drawText(0, yPos, " "); // Clear selection marker
+            usleep(Config::DISPLAY_CMD_DELAY);
+        }
+    }
 
     // Draw the menu options (Start, Stop, Back)
     for (size_t i = 0; i < m_options.size(); i++) {
@@ -228,22 +250,14 @@ void ThroughputServerScreen::renderOptions() {
             }
         }
 
+        // Pad buffer to ensure line is fully overwritten (16 chars like GenericListScreen)
+        while (buffer.length() < 16) {
+            buffer += " ";
+        }
+
         m_display->drawText(0, yPos, buffer);
         usleep(Config::DISPLAY_CMD_DELAY);
     }
-
-    // Add a blank line after "Back" (which is at y=36)
-    // Draw IP at y=46 (with blank line above it)
-    // Draw Port at y=46+8=54 (with no blank line between IP and Port)
-
-    // Draw IP address at position 46
-    m_display->drawText(0, 48, m_localIp);
-    usleep(Config::DISPLAY_CMD_DELAY);
-
-    // Show port information at position 54 (8px below IP - no blank line)
-    std::string portInfo = "Port:" + std::to_string(m_port);
-    m_display->drawText(0, 56, portInfo);
-    usleep(Config::DISPLAY_CMD_DELAY);
 }
 
 std::string ThroughputServerScreen::getIperf3Path() {
@@ -548,7 +562,7 @@ void ThroughputServerScreen::handleGPIORotation(int direction) {
 
     // Only redraw if selection changed
     if (oldSelection != m_selectedOption) {
-        renderOptions();
+        renderOptions(false); // Use minimal update to reduce flicker
     }
 }
 

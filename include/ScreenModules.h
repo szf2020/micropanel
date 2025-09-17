@@ -357,6 +357,7 @@ public:
 
 private:
     void renderOptions();
+    void renderOptions(bool fullRedraw);
     void startServer();
     void stopServer();
     bool isServerRunning() const;

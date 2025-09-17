@@ -137,7 +137,7 @@ set(SERVICE_USER "root" CACHE STRING "User to run micropanel service as")
 
 # Install target
 install(TARGETS micropanel patch-generator
-    RUNTIME DESTINATION bin
+    RUNTIME DESTINATION usr/bin
 )
 
 # Install init.d script for SysV init systems (only if systemd service is not installed)
@@ -163,10 +163,10 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/list-videos.sh
         scripts/play-image.sh
         scripts/stop-image.sh
-        DESTINATION bin
+        DESTINATION usr/bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     )
-    message(STATUS "Will install helper scripts to bin/")
+    message(STATUS "Will install helper scripts to /usr/bin/")
 endif()
 
 # Install media files

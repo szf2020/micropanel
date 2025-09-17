@@ -138,18 +138,28 @@ When creating new interactive screen modules that need GPIO input support:
 2. Implement both methods in the .cpp file following existing patterns
 3. Add module support to `MicroPanel::simulateRotationForModule()` in `src/MicroPanel.cpp`
 4. Add module support to the button press handling section in `MicroPanel::runModuleWithGPIOInput()`
-5. Examples: `NetInfoScreen`, `IPPingScreen`, `ThroughputServerScreen`, `ThroughputClientScreen`
+5. For PIMPL-based modules (like NetSettingsScreen), add corresponding methods to the Impl class and delegate from public methods
+6. Ensure proper exit handling: GPIO button methods should return `false` when the module should exit (check `m_shouldExit` flags)
+7. Examples: `NetInfoScreen`, `IPPingScreen`, `ThroughputServerScreen`, `ThroughputClientScreen`, `NetSettingsScreen`, `WiFiSettingsScreen`
 
 ## Recent Development History
 
-### Navigation System Improvements (Latest)
+### GPIO Support Expansion (Latest)
+- **NetSettingsScreen & WiFiSettingsScreen GPIO Support**: Added complete GPIO input support for network configuration screens
+- **Complex Menu Navigation**: Implemented multi-level GPIO navigation for NetSettingsScreen (main menu, mode selection, IP address editing)
+- **IP Selector Integration**: GPIO input now works seamlessly with IP address editing fields in network settings
+- **MicroPanel Integration**: Added proper module type detection and GPIO handling in `MicroPanel::runModuleWithGPIOInput()`
+- **Exit Mechanism Fix**: Fixed "Back" button functionality in NetSettingsScreen GPIO mode by properly handling `m_shouldExit` flag
+- **Bounded Navigation**: Applied consistent non-wraparound navigation patterns across all newly supported modules
+
+### Navigation System Improvements
 - **Eliminated Page Refresh Flicker**: Fixed ThroughputClientScreen page refresh issue when navigating up from end of list by replacing pagination with smooth scrolling
 - **Consistent Navigation Behavior**: Changed from wraparound navigation to bounded navigation (stops at first/last item) to match GenericListScreen pattern
 - **Anti-Flicker Improvements**: Enhanced all screen modules with proper text padding (16 characters) and minimal update rendering
 - **ThroughputServerScreen Optimization**: Added `renderOptions(bool fullRedraw)` overload for selective updates instead of full screen clears
 - **Scroll Indicator Optimization**: Only draw scroll indicators on full redraws to reduce unnecessary screen updates in submenu rendering
 
-### GPIO Support Implementation
+### Previous GPIO Support Implementation
 - **ThroughputServerScreen & ThroughputClientScreen**: Added full GPIO support with `handleGPIORotation()` and `handleGPIOButtonPress()` methods
 - **IP Address Picker Fix**: Fixed custom IP selection in ThroughputClientScreen by adding missing `m_ipSelector->handleButton()` call to activate cursor mode
 - **Navigation Arrow Fix**: Fixed Server IP submenu navigation using proper direction checking instead of problematic modulo math

@@ -859,6 +859,8 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
     auto brightnessModule = std::dynamic_pointer_cast<BrightnessScreen>(module);
     auto netInfoModule = std::dynamic_pointer_cast<NetInfoScreen>(module);
     auto pingModule = std::dynamic_pointer_cast<IPPingScreen>(module);
+    auto netSettingsModule = std::dynamic_pointer_cast<NetSettingsScreen>(module);
+    auto wifiSettingsModule = std::dynamic_pointer_cast<WiFiSettingsScreen>(module);
 
     if (menuModule) {
         std::cout << "Module type: MenuScreenModule (ID: " << menuModule->getModuleId() << ")" << std::endl;
@@ -868,6 +870,10 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
         std::cout << "Module type: NetInfoScreen" << std::endl;
     } else if (pingModule) {
         std::cout << "Module type: IPPingScreen" << std::endl;
+    } else if (netSettingsModule) {
+        std::cout << "Module type: NetSettingsScreen" << std::endl;
+    } else if (wifiSettingsModule) {
+        std::cout << "Module type: WiFiSettingsScreen" << std::endl;
     } else {
         std::cout << "Module type: Generic ScreenModule" << std::endl;
     }
@@ -910,6 +916,16 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
                     } else if (pingModule) {
                         std::cout << "Processing IPPingScreen button press" << std::endl;
                         if (!pingModule->handleGPIOButtonPress()) {
+                            moduleRunning = false;
+                        }
+                    } else if (netSettingsModule) {
+                        std::cout << "Processing NetSettingsScreen button press" << std::endl;
+                        if (!netSettingsModule->handleGPIOButtonPress()) {
+                            moduleRunning = false;
+                        }
+                    } else if (wifiSettingsModule) {
+                        std::cout << "Processing WiFiSettingsScreen button press" << std::endl;
+                        if (!wifiSettingsModule->handleGPIOButtonPress()) {
                             moduleRunning = false;
                         }
                     } else {
@@ -1045,6 +1061,22 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     if (throughputClientModule) {
         std::cout << "SUCCESS: ThroughputClientScreen - calling handleGPIORotation" << std::endl;
         throughputClientModule->handleGPIORotation(direction);
+        return;
+    }
+
+    // Add support for NetSettingsScreen
+    auto netSettingsModule = std::dynamic_pointer_cast<NetSettingsScreen>(module);
+    if (netSettingsModule) {
+        std::cout << "SUCCESS: NetSettingsScreen - calling handleGPIORotation" << std::endl;
+        netSettingsModule->handleGPIORotation(direction);
+        return;
+    }
+
+    // Add support for WiFiSettingsScreen
+    auto wifiSettingsModule = std::dynamic_pointer_cast<WiFiSettingsScreen>(module);
+    if (wifiSettingsModule) {
+        std::cout << "SUCCESS: WiFiSettingsScreen - calling handleGPIORotation" << std::endl;
+        wifiSettingsModule->handleGPIORotation(direction);
         return;
     }
 

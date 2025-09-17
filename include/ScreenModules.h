@@ -153,6 +153,10 @@ public:
     bool handleInput() override;
     std::string getModuleId() const override { return "wifi"; }
 
+    // GPIO support methods
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
+
 private:
     void setWiFiStatus(bool enabled);
     bool getWiFiStatus() const;
@@ -283,6 +287,10 @@ public:
     void exit() override;
     bool handleInput() override;
     std::string getModuleId() const override { return "netsettings"; }
+
+    // GPIO support methods
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
 
 private:
     // Internal implementation

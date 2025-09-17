@@ -84,6 +84,10 @@ public:
     void handleModeMenuButton();
     void handleAddrMenuButton();
 
+    // GPIO support methods
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
+
     // Drawing methods
     void drawMainMenu(bool fullRedraw);
     void updateMainMenuSelection(int oldSelection, int newSelection);
@@ -1184,4 +1188,196 @@ std::string NetSettingsScreen::Impl::getNetSettingsInterface() {
     }
     Logger::debug("Using iface_name from dependencies: " + interfaceName);
     return interfaceName;
+}
+
+// GPIO support methods for Impl class
+void NetSettingsScreen::Impl::handleGPIORotation(int direction) {
+    bool handled = false;
+
+    // Let IP selector handle rotation first if applicable
+    if (m_menuState == NetSettingsMenuState::MENU_IP &&
+        m_addrSelection == AddrMenuSelection::ADDR_IP) {
+        handled = m_ipSelector->handleRotation(direction);
+        if (handled) {
+            m_redrawNeeded = true;
+            m_settingsChanged = true;
+            m_settingsApplied = false;
+        }
+    }
+    else if (m_menuState == NetSettingsMenuState::MENU_GATEWAY &&
+             m_addrSelection == AddrMenuSelection::ADDR_IP) {
+        handled = m_gatewaySelector->handleRotation(direction);
+        if (handled) {
+            m_redrawNeeded = true;
+            m_settingsChanged = true;
+            m_settingsApplied = false;
+        }
+    }
+    else if (m_menuState == NetSettingsMenuState::MENU_NETMASK &&
+             m_addrSelection == AddrMenuSelection::ADDR_IP) {
+        handled = m_netmaskSelector->handleRotation(direction);
+        if (handled) {
+            m_redrawNeeded = true;
+            m_settingsChanged = true;
+            m_settingsApplied = false;
+        }
+    }
+
+    // If not handled by IP selector, handle menu navigation
+    if (!handled) {
+        switch (m_menuState) {
+            case NetSettingsMenuState::MENU_MAIN:
+                {
+                    int oldSelection = m_mainSelection;
+                    int numItems = static_cast<int>(MainMenuSelection::MAIN_ITEM_COUNT);
+
+                    // Navigate menu with bounded movement (no wrap like other screens)
+                    if (direction < 0) {
+                        // Move up
+                        if (m_mainSelection > 0) {
+                            m_mainSelection--;
+                        }
+                    } else {
+                        // Move down
+                        if (m_mainSelection < numItems - 1) {
+                            m_mainSelection++;
+                        }
+                    }
+
+                    // Update display if selection changed
+                    if (oldSelection != m_mainSelection) {
+                        updateMainMenuSelection(oldSelection, m_mainSelection);
+                    }
+                }
+                break;
+
+            case NetSettingsMenuState::MENU_MODE:
+                {
+                    int oldSelection = m_modeSelection;
+                    int numItems = static_cast<int>(ModeMenuSelection::MODE_ITEM_COUNT);
+
+                    // Navigate menu with bounded movement
+                    if (direction < 0) {
+                        // Move up
+                        if (m_modeSelection > 0) {
+                            m_modeSelection--;
+                        }
+                    } else {
+                        // Move down
+                        if (m_modeSelection < numItems - 1) {
+                            m_modeSelection++;
+                        }
+                    }
+
+                    // Update display if selection changed
+                    if (oldSelection != m_modeSelection) {
+                        updateModeMenuSelection(oldSelection, m_modeSelection);
+                    }
+                }
+                break;
+
+            case NetSettingsMenuState::MENU_IP:
+            case NetSettingsMenuState::MENU_GATEWAY:
+            case NetSettingsMenuState::MENU_NETMASK:
+                {
+                    AddrMenuSelection oldSelection = m_addrSelection;
+                    int numItems = static_cast<int>(AddrMenuSelection::ADDR_ITEM_COUNT);
+                    int currentIndex = static_cast<int>(m_addrSelection);
+
+                    // Navigate address menu with bounded movement
+                    if (direction < 0) {
+                        // Move up
+                        if (currentIndex > 0) {
+                            currentIndex--;
+                        }
+                    } else {
+                        // Move down
+                        if (currentIndex < numItems - 1) {
+                            currentIndex++;
+                        }
+                    }
+
+                    m_addrSelection = static_cast<AddrMenuSelection>(currentIndex);
+
+                    // Update display if selection changed
+                    if (oldSelection != m_addrSelection) {
+                        IPSelector* selector = nullptr;
+                        if (m_menuState == NetSettingsMenuState::MENU_IP) {
+                            selector = m_ipSelector.get();
+                        } else if (m_menuState == NetSettingsMenuState::MENU_GATEWAY) {
+                            selector = m_gatewaySelector.get();
+                        } else if (m_menuState == NetSettingsMenuState::MENU_NETMASK) {
+                            selector = m_netmaskSelector.get();
+                        }
+                        updateAddrMenuSelection(oldSelection, m_addrSelection, selector);
+                    }
+                }
+                break;
+        }
+    }
+}
+
+bool NetSettingsScreen::Impl::handleGPIOButtonPress() {
+    bool handled = false;
+
+    // Let IP selector handle button first if applicable
+    if (m_menuState == NetSettingsMenuState::MENU_IP &&
+        m_addrSelection == AddrMenuSelection::ADDR_IP) {
+        handled = m_ipSelector->handleButton();
+        if (handled) {
+            m_redrawNeeded = true;
+            m_settingsChanged = true;
+            m_settingsApplied = false;
+        }
+    }
+    else if (m_menuState == NetSettingsMenuState::MENU_GATEWAY &&
+             m_addrSelection == AddrMenuSelection::ADDR_IP) {
+        handled = m_gatewaySelector->handleButton();
+        if (handled) {
+            m_redrawNeeded = true;
+            m_settingsChanged = true;
+            m_settingsApplied = false;
+        }
+    }
+    else if (m_menuState == NetSettingsMenuState::MENU_NETMASK &&
+             m_addrSelection == AddrMenuSelection::ADDR_IP) {
+        handled = m_netmaskSelector->handleButton();
+        if (handled) {
+            m_redrawNeeded = true;
+            m_settingsChanged = true;
+            m_settingsApplied = false;
+        }
+    }
+
+    // If not handled by IP selector, handle menu actions
+    if (!handled) {
+        switch (m_menuState) {
+            case NetSettingsMenuState::MENU_MAIN:
+                handleMainMenuButton();
+                break;
+            case NetSettingsMenuState::MENU_MODE:
+                handleModeMenuButton();
+                break;
+            case NetSettingsMenuState::MENU_IP:
+            case NetSettingsMenuState::MENU_GATEWAY:
+            case NetSettingsMenuState::MENU_NETMASK:
+                handleAddrMenuButton();
+                break;
+        }
+    }
+
+    // Return false to exit the screen (like regular handleInput method)
+    return !m_shouldExit;
+}
+
+// Public GPIO support methods for NetSettingsScreen
+void NetSettingsScreen::handleGPIORotation(int direction) {
+    m_pImpl->handleGPIORotation(direction);
+    m_display->updateActivityTimestamp();
+}
+
+bool NetSettingsScreen::handleGPIOButtonPress() {
+    bool result = m_pImpl->handleGPIOButtonPress();
+    m_display->updateActivityTimestamp();
+    return result;
 }

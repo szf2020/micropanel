@@ -163,3 +163,51 @@ void WiFiSettingsScreen::setWiFiStatus(bool enabled)
         // }
     }
 }
+
+// GPIO support methods
+void WiFiSettingsScreen::handleGPIORotation(int direction) {
+    // Use the same navigation logic as handleInput()
+    int oldSelection = m_selectedOption;
+
+    if (direction < 0) {
+        // Move up
+        if (m_selectedOption > 0) {
+            m_selectedOption--;
+        }
+    } else {
+        // Move down
+        if (m_selectedOption < static_cast<int>(m_options.size() - 1)) {
+            m_selectedOption++;
+        }
+    }
+
+    // Only redraw if selection changed
+    if (oldSelection != m_selectedOption) {
+        renderOptions();
+    }
+
+    m_display->updateActivityTimestamp();
+}
+
+bool WiFiSettingsScreen::handleGPIOButtonPress() {
+    // Use the same selection logic as handleInput()
+    if (m_selectedOption == 2) {
+        return false; // Exit the screen
+    } else {
+        // Try to change WiFi state
+        bool newState = (m_selectedOption == 0); // Option 0 = "Turn On", Option 1 = "Turn Off"
+
+        // Only act if state would change
+        if (newState != m_currentWiFiState) {
+            // Update the state
+            setWiFiStatus(newState);
+            m_currentWiFiState = newState;
+
+            // Redraw options to update state indicators
+            renderOptions();
+        }
+    }
+
+    m_display->updateActivityTimestamp();
+    return true; // Continue running
+}

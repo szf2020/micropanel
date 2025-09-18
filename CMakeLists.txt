@@ -134,6 +134,7 @@ option(INSTALL_SYSTEMD_SERVICE "Install systemd service file" OFF)
 option(INSTALL_HELPER_SCRIPTS "Install helper shell scripts" OFF)
 option(INSTALL_MEDIA_FILES "Install media files to share/micropanel/media" OFF)
 set(SERVICE_USER "root" CACHE STRING "User to run micropanel service as")
+set(SYSTEMD_UNITFILE_ARGS "" CACHE STRING "Additional command line arguments for micropanel in systemd service")
 
 # Install target
 install(TARGETS micropanel patch-generator
@@ -247,6 +248,9 @@ if(INSTALL_SYSTEMD_SERVICE)
     message(STATUS "  Service will run as: ${SERVICE_USER}")
     message(STATUS "  Binary path: ${CMAKE_INSTALL_PREFIX}/bin/micropanel")
     message(STATUS "  Config path: ${CMAKE_INSTALL_PREFIX}/etc/micropanel/config.json")
+    if(SYSTEMD_UNITFILE_ARGS)
+        message(STATUS "  Additional args: ${SYSTEMD_UNITFILE_ARGS}")
+    endif()
 endif()
 
 # Strip the binary to reduce size (only in Release mode)

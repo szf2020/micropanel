@@ -92,9 +92,9 @@ if [ -z "$MODE" ]; then
             # Method 2: systemd-networkd DHCP check
             if [ "$DHCP_DETECTED" -eq 0 ] && command -v networkctl >/dev/null 2>&1; then
                 # Check if systemd-networkd is managing this interface with DHCP
-                if networkctl status "$INTERFACE" 2>/dev/null | grep -q "DHCP4.*yes"; then
+                if networkctl status "$INTERFACE" 2>/dev/null | grep -q "DHCP4.*via\|Address.*DHCP4"; then
                     DHCP_DETECTED=1
-                    log_verbose "DHCP detected: systemd-networkd DHCP4 enabled"
+                    log_verbose "DHCP detected: systemd-networkd DHCP4 active"
                 fi
             fi
 

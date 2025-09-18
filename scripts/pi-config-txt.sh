@@ -165,6 +165,65 @@ create_backup() {
     fi
 }
 
+# Function to find and ensure config.txt is accessible
+find_config_file() {
+    local input_file="$1"
+
+    # If user specified a file, try to use it directly first
+    if [ -n "$input_file" ]; then
+        if [ -f "$input_file" ]; then
+            echo "$input_file"
+            return 0
+        fi
+    fi
+
+    # Standard locations to check
+    local config_paths="/boot/firmware/config.txt /boot/config.txt"
+
+    # Check if any standard location exists
+    for path in $config_paths; do
+        if [ -f "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+
+    # If we get here, try to mount /boot for buildroot environments
+    if [ ! -f "/boot/config.txt" ] && [ -b "/dev/mmcblk0p1" ]; then
+        if [ "$(id -u)" -eq 0 ]; then
+            # Check if /boot is already mounted before attempting to mount
+            if ! mountpoint -q /boot 2>/dev/null; then
+                # Try to mount the boot partition
+                mkdir -p /boot 2>/dev/null || true
+                mount /dev/mmcblk0p1 /boot 2>/dev/null
+
+                if [ $VERBOSE -eq 1 ]; then
+                    echo "Mounted /dev/mmcblk0p1 to /boot"
+                fi
+            fi
+
+            if [ -f "/boot/config.txt" ]; then
+                echo "/boot/config.txt"
+                return 0
+            fi
+        else
+            echo "Error: Boot partition not mounted and not running as root to mount it" >&2
+            echo "Try: sudo mount /dev/mmcblk0p1 /boot" >&2
+            exit 1
+        fi
+    fi
+
+    # If user specified a file but it doesn't exist, return it anyway for proper error handling
+    if [ -n "$input_file" ]; then
+        echo "$input_file"
+        return 1
+    fi
+
+    # Default fallback
+    echo "/boot/firmware/config.txt"
+    return 1
+}
+
 # Parse command line arguments
 INPUT_FILE=""
 DISPLAY_TYPE=""
@@ -206,15 +265,24 @@ if [ -z "$INPUT_FILE" ] && [ -z "$DISPLAY_TYPE" ] && [ $QUERY_CONFIG -eq 0 ] && 
     usage
 fi
 
+# Auto-detect config file if not specified
+if [ -z "$INPUT_FILE" ] && ([ -n "$DISPLAY_TYPE" ] || [ $QUERY_CONFIG -eq 1 ]); then
+    INPUT_FILE=$(find_config_file "")
+fi
+
 # If --input is provided without --query-config, enable query-config mode by default
 if [ -n "$INPUT_FILE" ] && [ -z "$DISPLAY_TYPE" ] && [ $QUERY_CONFIG -eq 0 ] && [ $QUERY_DISPLAY -eq 0 ]; then
     QUERY_CONFIG=1
 fi
 
-# Check if input file exists when needed
-if [ -n "$INPUT_FILE" ] && [ ! -f "$INPUT_FILE" ]; then
-    echo "Error: Input file $INPUT_FILE does not exist"
-    exit 1
+# Resolve and validate input file
+if [ -n "$INPUT_FILE" ]; then
+    RESOLVED_INPUT_FILE=$(find_config_file "$INPUT_FILE")
+    if [ ! -f "$RESOLVED_INPUT_FILE" ]; then
+        echo "Error: Input file $RESOLVED_INPUT_FILE does not exist"
+        exit 1
+    fi
+    INPUT_FILE="$RESOLVED_INPUT_FILE"
 fi
 
 # Include the original get_current_resolution function (unchanged for compatibility)

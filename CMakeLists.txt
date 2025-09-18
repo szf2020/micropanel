@@ -154,6 +154,7 @@ endif()
 if(INSTALL_HELPER_SCRIPTS)
     install(FILES
         scripts/dhcp-net-settings.sh
+        scripts/dhcp-net-settings-buildroot.sh
         scripts/list-images.sh
         scripts/pi-config-txt.sh
         scripts/play-video.sh
@@ -162,6 +163,7 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/dhcp-net-settings-pios.sh
         scripts/hdmi-patch.sh
         scripts/list-videos.sh
+        scripts/list-images.sh
         scripts/play-image.sh
         scripts/stop-image.sh
         DESTINATION usr/bin

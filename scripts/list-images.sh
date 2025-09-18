@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Path to directory containing image files
 IMAGE_DIR="${1:-/media/files/path}"
@@ -18,6 +18,7 @@ if [ ! -d "$IMAGE_DIR" ]; then
     exit 1
 fi
 
-# List all .mkv files in the directory
-find "$IMAGE_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.bmp" \) -printf "%f\n" | sort
+# List all image files in the directory
+# Use POSIX-compatible find command - busybox doesn't support -printf
+find "$IMAGE_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.bmp" \) | sed 's|.*/||' | sort
 exit 0

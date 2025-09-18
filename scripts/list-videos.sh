@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Path to directory containing video files
 VIDEO_DIR="${1:-/media/files/path}"
@@ -36,6 +36,7 @@ if [ ! -d "$VIDEO_DIR" ]; then
 fi
 
 # List all video files in the directory (include more formats)
-find "$VIDEO_DIR" -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.avi" -o -name "*.mov" -o -name "*.h264" \) -printf "%f\n" | sort
+# Use POSIX-compatible find command - busybox doesn't support -printf
+find "$VIDEO_DIR" -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.avi" -o -name "*.mov" -o -name "*.h264" \) | sed 's|.*/||' | sort
 
 exit 0

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Define constants
 LOCK_FILE="/tmp/micropanel_video.lock"
@@ -57,7 +57,7 @@ fi
 # Create a launcher script with proper cleanup
 LAUNCHER_SCRIPT="/tmp/mpv_launcher_$$.sh"
 cat > "$LAUNCHER_SCRIPT" << 'EOF'
-#!/bin/bash
+#!/bin/sh
 # This file will self-delete after execution
 
 # Arguments passed from main script

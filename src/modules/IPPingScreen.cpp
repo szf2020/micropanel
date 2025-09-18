@@ -287,15 +287,30 @@ void IPPingScreen::checkPingStatus() {
                 std::ifstream pingFile("/tmp/micropanel_ping_result.txt");
                 if (pingFile.is_open()) {
                     std::string line;
-                    if (std::getline(pingFile, line)) {
+                    if (std::getline(pingFile, line) && !line.empty()) {
                         try {
                             m_pingTimeMs = std::stod(line);
+                            // Additional validation: if time is 0.0, it might indicate parsing failure
+                            if (m_pingTimeMs <= 0.0) {
+                                Logger::error("Invalid ping time value: " + line);
+                                m_pingResult = 1; // Treat as failure
+                            }
                         } catch (...) {
-                            Logger::error("Failed to parse ping time");
+                            Logger::error("Failed to parse ping time: " + line);
+                            m_pingResult = 1; // Treat as failure
                             m_pingTimeMs = 0.0;
                         }
+                    } else {
+                        // Empty file or no line - ping actually failed
+                        Logger::error("No ping time found in result file");
+                        m_pingResult = 1; // Treat as failure
+                        m_pingTimeMs = 0.0;
                     }
                     pingFile.close();
+                } else {
+                    // Could not open temp file - ping failed
+                    Logger::error("Could not open ping result file");
+                    m_pingResult = 1; // Treat as failure
                 }
 
                 // Clean up temporary file

@@ -180,6 +180,13 @@ When creating new interactive screen modules that need GPIO input support:
 - **Cross-Platform Ping**: Updated ping time extraction from `grep -oP 'time=\\K[0-9.]+'` to `grep 'time=' | awk -F'time=' '{print $2}' | awk '{print $1}'`
 - **Enhanced Portability**: Ping functionality now works on busybox, standard Linux, Ubuntu, Raspberry Pi OS, and other Unix-like systems
 
+### Script Optimization & Template System
+- **pi-config-txt.sh Optimization**: Reduced script from 807 lines to ~400 lines (50% reduction) by eliminating 400+ lines of configuration duplication
+- **Template-Based Architecture**: Introduced external template system using `config-base.txt.in` and `display-configs.conf` for maintainable display configurations
+- **Data-Driven Approach**: All display types now defined in single configuration file (`display-configs.conf`) with format: `TYPE:RESOLUTION:HDMI_TIMINGS:PIXEL_FREQ:FB_WIDTH:FB_HEIGHT:DESCRIPTION`
+- **Easy Maintenance**: Adding new display types requires only one line addition to configuration file, no code changes needed
+- **Consistent Output**: All configurations use shared base template ensuring consistency across display types
+
 ### Current Status & Capabilities
 - **Complete GPIO Support**: All interactive screen modules now support GPIO input mode (`-i gpio`)
 - **Comprehensive Navigation**: Bounded navigation with anti-flicker rendering across all modules

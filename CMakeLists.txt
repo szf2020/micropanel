@@ -132,7 +132,7 @@ option(INSTALL_ALL_CONFIGS "Install all configuration files" OFF)
 set(INSTALL_SCREEN "" CACHE STRING "Specific screen config to install (e.g., config-pios.json)")
 option(INSTALL_SYSTEMD_SERVICE "Install systemd service file" OFF)
 option(INSTALL_HELPER_SCRIPTS "Install helper shell scripts" OFF)
-option(INSTALL_MEDIA_FILES "Install media files to share/micropanel/media" OFF)
+option(INSTALL_MEDIA_FILES "Install media files to usr/share/micropanel/media" OFF)
 set(SERVICE_USER "root" CACHE STRING "User to run micropanel service as")
 set(SYSTEMD_UNITFILE_ARGS "" CACHE STRING "Additional command line arguments for micropanel in systemd service")
 
@@ -176,10 +176,10 @@ endif()
 if(INSTALL_MEDIA_FILES)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/media")
         install(DIRECTORY media/
-            DESTINATION share/micropanel/media
+            DESTINATION usr/share/micropanel/media
             FILES_MATCHING PATTERN "*"
         )
-        message(STATUS "Will install media files to share/micropanel/media/")
+        message(STATUS "Will install media files to usr/share/micropanel/media/")
     else()
         message(WARNING "Media directory not found at ${CMAKE_CURRENT_SOURCE_DIR}/media")
     endif()
@@ -232,6 +232,17 @@ if(INSTALL_ADDITIONAL_CONFIGS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs")
         FILES_MATCHING PATTERN "*"
     )
     message(STATUS "Will install configs/ directory to etc/micropanel/configs/")
+endif()
+
+# Install pi-config-txt.sh template dependencies
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs/config-base.txt.in" AND
+   EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs/display-configs.conf")
+    install(FILES
+        configs/config-base.txt.in
+        configs/display-configs.conf
+        DESTINATION usr/share/micropanel/configs
+    )
+    message(STATUS "Will install pi-config-txt template files to usr/share/micropanel/configs/")
 endif()
 
 # Configure and install systemd service file

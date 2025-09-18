@@ -104,6 +104,10 @@ sudo make install  # Installs to /usr/local/bin
 cmake -DINSTALL_SCREEN=config-pios.json -DINSTALL_SYSTEMD_SERVICE=ON ..
 make && sudo make install
 
+# Installation with systemd service and custom arguments
+cmake -DINSTALL_SYSTEMD_SERVICE=ON -DSYSTEMD_UNITFILE_ARGS="-i gpio -s /dev/i2c-3" ..
+make && sudo make install
+
 # Install all configuration files
 cmake -DINSTALL_ALL_CONFIGS=ON ..
 make && sudo make install
@@ -114,6 +118,7 @@ make && sudo make install
 - `INSTALL_SCREEN=config-name.json`: Install specific config as `/etc/micropanel/config.json`
 - `INSTALL_SYSTEMD_SERVICE=ON`: Install systemd service file
 - `SERVICE_USER=username`: Set service user (default: root)
+- `SYSTEMD_UNITFILE_ARGS="args"`: Additional command line arguments for micropanel in systemd service
 - `INSTALL_ADDITIONAL_CONFIGS=ON`: Install configs/ directory if present
 
 ## Development Workflow
@@ -170,10 +175,16 @@ When creating new interactive screen modules that need GPIO input support:
 - **Smooth Scrolling**: Replaced pagination-based navigation with smooth scrolling for better user experience
 - **Reduced Display Commands**: Optimized rendering to minimize display command frequency and reduce flicker
 
+### Busybox Compatibility Improvements
+- **IPPingScreen Busybox Fix**: Fixed ping functionality for minimal Linux environments by replacing GNU-specific `grep -oP` with POSIX-compatible `awk` command pipeline
+- **Cross-Platform Ping**: Updated ping time extraction from `grep -oP 'time=\\K[0-9.]+'` to `grep 'time=' | awk -F'time=' '{print $2}' | awk '{print $1}'`
+- **Enhanced Portability**: Ping functionality now works on busybox, standard Linux, Ubuntu, Raspberry Pi OS, and other Unix-like systems
+
 ### Current Status & Capabilities
 - **Complete GPIO Support**: All interactive screen modules now support GPIO input mode (`-i gpio`)
 - **Comprehensive Navigation**: Bounded navigation with anti-flicker rendering across all modules
 - **Network Configuration**: Full GPIO support for IP settings, WiFi settings, and throughput testing
+- **Busybox Compatible**: All network tools work on minimal Linux environments with busybox utilities
 - **Production Ready**: Stable GPIO integration with proper exit handling and state management
 
 ### Known Issues & Limitations

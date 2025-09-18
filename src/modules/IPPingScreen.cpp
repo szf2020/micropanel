@@ -334,9 +334,9 @@ void IPPingScreen::startPing() {
     if (child_pid == 0) {
         // Child process - run ping
         char command[256];
-        // Use ping with time output and grep to extract time value, save to temp file
+        // Use busybox-compatible ping command to extract time value
         snprintf(command, sizeof(command),
-                "ping -c 1 -W 2 %s | grep -oP 'time=\\K[0-9.]+' > /tmp/micropanel_ping_result.txt",
+                "ping -c 1 -W 2 %s | grep 'time=' | awk -F'time=' '{print $2}' | awk '{print $1}' > /tmp/micropanel_ping_result.txt",
                 ipAddress.c_str());
         int result = system(command);
         std::quick_exit(result == 0 ? 0 : 1);

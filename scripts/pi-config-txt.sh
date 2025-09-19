@@ -15,11 +15,12 @@ usage() {
     echo "  Query display: $0 --query-display [-v]"
     echo ""
     echo "Options:"
-    echo "  --input=FILE    Specify the configuration file path"
-    echo "  --type=TYPE     Configure for display type (14.6-fhd, 14.6, 15.6, 27, edid)"
-    echo "  --query-config  Read and output configured display type/resolution"
-    echo "  --query-display Query actual display resolution on HDMI output"
-    echo "  -v, --verbose   Show detailed information"
+    echo "  --input=FILE      Specify the configuration file path"
+    echo "  --type=TYPE       Configure for display type (14.6-fhd, 14.6, 15.6, 27, edid)"
+    echo "  --configspath=DIR Override config directory path (default: /usr/share/micropanel/configs)"
+    echo "  --query-config    Read and output configured display type/resolution"
+    echo "  --query-display   Query actual display resolution on HDMI output"
+    echo "  -v, --verbose     Show detailed information"
     exit 1
 }
 
@@ -239,6 +240,12 @@ for arg in "$@"; do
             ;;
         --type=*)
             DISPLAY_TYPE="${arg#*=}"
+            shift
+            ;;
+        --configspath=*)
+            CONFIG_DIR="${arg#*=}"
+            CONFIG_DATA_FILE="$CONFIG_DIR/display-configs.conf"
+            BASE_TEMPLATE="$CONFIG_DIR/config-base.txt.in"
             shift
             ;;
         --query-config)

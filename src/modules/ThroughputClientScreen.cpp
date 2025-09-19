@@ -2183,7 +2183,11 @@ void ThroughputClientScreen::handleGPIORotation(int direction) {
     } else if (m_state == ThroughputClientState::SUBMENU_STATE_PROTOCOL) {
         // Protocol submenu navigation
         int numOptions = static_cast<int>(m_protocolOptions.size() + 1); // +1 for Back
-        m_submenuSelection = (m_submenuSelection + numOptions + direction) % numOptions;
+        if (direction < 0) {
+            m_submenuSelection = (m_submenuSelection - 1 + numOptions) % numOptions;
+        } else {
+            m_submenuSelection = (m_submenuSelection + 1) % numOptions;
+        }
         renderProtocolSubmenu(false);
     } else if (m_state == ThroughputClientState::SUBMENU_STATE_DURATION) {
         // Duration submenu navigation
@@ -2227,7 +2231,11 @@ void ThroughputClientScreen::handleGPIORotation(int direction) {
         // Auto-discover results navigation
         int numOptions = !m_discoveredServers.empty() ?
                        static_cast<int>(m_discoveredServers.size() + 1) : 1; // +1 for Back
-        m_submenuSelection = (m_submenuSelection + numOptions + direction) % numOptions;
+        if (direction < 0) {
+            m_submenuSelection = (m_submenuSelection - 1 + numOptions) % numOptions;
+        } else {
+            m_submenuSelection = (m_submenuSelection + 1) % numOptions;
+        }
         renderAutoDiscoverScreen(false);
     }
 }

@@ -227,7 +227,7 @@
     {
       "id": "network_config",
       "title": "Config",
-      "enabled": true,
+      "enabled": false,
       "type": "menu",
       "submenus": [
         {"id": "netsettings", "title": "IP Settings"},
@@ -238,7 +238,7 @@
     {
       "id": "network_status",
       "title": "Status",
-      "enabled": true,
+      "enabled": false,
       "type": "menu",
       "submenus": [
         {"id": "netinfo", "title": "Interfaces"},
@@ -261,7 +261,7 @@
     {
       "id": "netsettings",
       "title": "IP Settings",
-      "enabled": true,
+      "enabled": false,
       "depends": {
         "action_script": "/usr/bin/dhcp-net-settings.sh",
         "os_type": "buildroot",
@@ -271,22 +271,22 @@
     {
       "id": "netinfo",
       "title": "Network Info",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "ping",
       "title": "Ping Tool",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "internet",
       "title": "Internet Test",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "speedtest",
       "title": "Speed Test",
-      "enabled": true,
+      "enabled": false,
       "depends": {
         "download_url": "https://cachefly.cachefly.net/50mb.test"
       }

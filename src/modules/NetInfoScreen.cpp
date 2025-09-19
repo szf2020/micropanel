@@ -102,7 +102,7 @@ void NetInfoScreen::update()
         // Save current selection
         std::string selectedName;
         if (!m_pImpl->m_interfaces.empty() && m_pImpl->m_selectedInterface >= 0 &&
-            m_pImpl->m_selectedInterface < static_cast<int>(m_pImpl->m_interfaces.size()) - 1) {
+            m_pImpl->m_selectedInterface < static_cast<int>(m_pImpl->m_interfaces.size())) {
             selectedName = m_pImpl->m_interfaces[m_pImpl->m_selectedInterface].name;
         }
 
@@ -111,7 +111,7 @@ void NetInfoScreen::update()
 
         // Try to restore selection if possible
         if (!selectedName.empty()) {
-            for (size_t i = 0; i < m_pImpl->m_interfaces.size() - 1; i++) {
+            for (size_t i = 0; i < m_pImpl->m_interfaces.size(); i++) {
                 if (m_pImpl->m_interfaces[i].name == selectedName) {
                     m_pImpl->m_selectedInterface = i;
                     break;
@@ -122,8 +122,8 @@ void NetInfoScreen::update()
         // Update display if we're in the main menu
         if (!m_pImpl->m_inSubmenu) {
             m_pImpl->renderMenu(true);
-        } else if (m_pImpl->m_selectedInterface < static_cast<int>(m_pImpl->m_interfaces.size()) - 1) {
-            // Update the details screen if we're in submenu
+        } else if (m_pImpl->m_selectedInterface < static_cast<int>(m_pImpl->m_interfaces.size()) - 2) {
+            // Update the details screen if we're in submenu (exclude Back and Main Menu)
             m_pImpl->renderInterfaceDetails(m_pImpl->m_selectedInterface);
         }
 
@@ -167,7 +167,11 @@ bool NetInfoScreen::handleInput()
             } else {
                 // In main menu
                 if (m_pImpl->m_selectedInterface == static_cast<int>(m_pImpl->m_interfaces.size()) - 1) {
-                    // "Back" selected - exit
+                    // "Main Menu" selected - trigger callback to navigate to main menu
+                    notifyCallback("exit_to_main_menu", "");
+                    m_pImpl->m_shouldExit = true;
+                } else if (m_pImpl->m_selectedInterface == static_cast<int>(m_pImpl->m_interfaces.size()) - 2) {
+                    // "Back" selected - exit normally
                     m_pImpl->m_shouldExit = true;
                 } else {
                     // Interface selected - show details
@@ -265,10 +269,16 @@ void NetInfoScreen::Impl::refreshInterfaceList()
 
     freeifaddrs(ifaddr);
 
-    // Add "Back" option
+    // Add "Back" and "Main Menu" options
     InterfaceInfo backOption;
     backOption.name = "Back";
+    backOption.linkUp = false;  // Explicitly set to prevent garbage values
     m_interfaces.push_back(backOption);
+
+    InterfaceInfo mainMenuOption;
+    mainMenuOption.name = "Main Menu";
+    mainMenuOption.linkUp = false;  // Explicitly set to prevent garbage values
+    m_interfaces.push_back(mainMenuOption);
 
     // Set last refresh time
     m_lastRefreshTime = time(nullptr);
@@ -420,14 +430,15 @@ void NetInfoScreen::Impl::renderMenu(bool fullRedraw)
         int itemIndex = i + m_scrollOffset;
         std::string line;
 
-        if (itemIndex < static_cast<int>(m_interfaces.size()) - 1) {
+        if (itemIndex < static_cast<int>(m_interfaces.size()) - 2) {
             // Regular interface item
             const std::string& name = m_interfaces[itemIndex].name;
             const std::string linkIndicator = m_interfaces[itemIndex].linkUp ? "*" : "";
             line = (m_selectedInterface == itemIndex ? ">" : " ") + name + linkIndicator;
-        } else if (itemIndex == static_cast<int>(m_interfaces.size()) - 1) {
-            // Back option
-            line = (m_selectedInterface == itemIndex ? ">" : " ") + m_interfaces[itemIndex].name;
+        } else {
+            // Back or Main Menu options - never show link indicators
+            const std::string& name = m_interfaces[itemIndex].name;
+            line = (m_selectedInterface == itemIndex ? ">" : " ") + name;
         }
 
         m_display->drawText(0, 16 + (i * 8), line);
@@ -611,7 +622,13 @@ bool NetInfoScreen::handleGPIOButtonPress()
     } else {
         // In main menu
         if (m_pImpl->m_selectedInterface == static_cast<int>(m_pImpl->m_interfaces.size()) - 1) {
-            // "Back" selected - exit
+            // "Main Menu" selected - trigger callback to navigate to main menu
+            std::cout << "Main Menu selected - triggering callback to navigate to main menu" << std::endl;
+            notifyCallback("exit_to_main_menu", "");
+            m_pImpl->m_shouldExit = true;
+            return false; // Exit the screen
+        } else if (m_pImpl->m_selectedInterface == static_cast<int>(m_pImpl->m_interfaces.size()) - 2) {
+            // "Back" selected - exit normally
             std::cout << "Back selected - exiting NetInfoScreen" << std::endl;
             m_pImpl->m_shouldExit = true;
             return false; // Exit the screen
@@ -625,6 +642,12 @@ bool NetInfoScreen::handleGPIOButtonPress()
 
     m_display->updateActivityTimestamp();
     return !m_pImpl->m_shouldExit; // Continue running unless exit flag is set
+}
+
+void NetInfoScreen::notifyCallback(const std::string& action, const std::string& value) {
+    if (m_callback) {
+        m_callback->onScreenAction(getModuleId(), action, value);
+    }
 }
 
 

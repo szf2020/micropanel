@@ -51,8 +51,9 @@ protected:
     std::atomic<bool> m_running{false};
 };
 
-// Forward declaration for MenuScreenModule
+// Forward declarations
 class MenuScreenModule;
+class ScreenCallback;
 
 /**
  * Network information screen
@@ -267,10 +268,15 @@ public:
     void handleGPIORotation(int direction);
     bool handleGPIOButtonPress();
 
+    // Callback support (same pattern as GenericListScreen)
+    void setCallback(ScreenCallback* callback) { m_callback = callback; }
+    void notifyCallback(const std::string& action, const std::string& value);
+
 private:
     // Internal implementation
     class Impl;  // Use PIMPL idiom
     std::unique_ptr<Impl> m_pImpl;
+    ScreenCallback* m_callback = nullptr;
 };
 
 /**

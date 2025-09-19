@@ -193,6 +193,116 @@ When creating new interactive screen modules that need GPIO input support:
 - **Network Configuration**: Full GPIO support for IP settings, WiFi settings, and throughput testing
 - **Busybox Compatible**: All network tools work on minimal Linux environments with busybox utilities
 - **Production Ready**: Stable GPIO integration with proper exit handling and state management
+- **Main Menu Navigation**: ScreenCallback pattern enables "Main Menu" functionality in deeply nested screens
+
+### Adding "Main Menu" to Nested Screen Modules
+
+**Problem**: Deep menu navigation (e.g., Main→Network→Status→Interfaces) requires multiple "Back" presses to reach main menu.
+
+**Solution**: Use the proven ScreenCallback pattern that leverages existing MenuScreenModule infrastructure.
+
+#### Implementation Pattern (4 Steps):
+
+**Step 1: Add ScreenCallback Support to Target Module**
+```cpp
+// In include/ScreenModules.h - Add to class declaration:
+class YourScreen : public ScreenModule {
+public:
+    // ... existing methods ...
+
+    // Callback support (same pattern as GenericListScreen)
+    void setCallback(ScreenCallback* callback) { m_callback = callback; }
+    void notifyCallback(const std::string& action, const std::string& value);
+
+private:
+    ScreenCallback* m_callback = nullptr;
+};
+
+// In src/modules/YourScreen.cpp - Implement the method:
+void YourScreen::notifyCallback(const std::string& action, const std::string& value) {
+    if (m_callback) {
+        m_callback->onScreenAction(getModuleId(), action, value);
+    }
+}
+```
+
+**Step 2: Update MenuScreenModule Integration**
+```cpp
+// In src/modules/MenuScreenModule.cpp - Add to executeSubmenuAction():
+// If this is a YourScreen, set its callback to this
+auto yourScreen = std::dynamic_pointer_cast<YourScreen>(module);
+if (yourScreen) {
+    yourScreen->setCallback(this);
+}
+```
+
+**Step 3: Handle Exit to Main Menu Action**
+```cpp
+// In src/modules/MenuScreenModule.cpp - Add to onScreenAction():
+} else if (action == "exit_to_main_menu") {
+    // Handle request to navigate to main menu from child screen
+    Logger::debug("Child screen requested exit to main menu: " + screenId);
+    navigateToMainMenu();  // Uses existing proven mechanism
+}
+```
+
+**Step 4: Add Main Menu Option to Target Screen**
+```cpp
+// Add "Main Menu" as menu option (after "Back")
+// When selected, trigger callback:
+notifyCallback("exit_to_main_menu", "");
+```
+
+#### Complete Working Example (NetInfoScreen):
+
+**Header Addition** (`include/ScreenModules.h`):
+```cpp
+class NetInfoScreen : public ScreenModule {
+    // Callback support
+    void setCallback(ScreenCallback* callback) { m_callback = callback; }
+    void notifyCallback(const std::string& action, const std::string& value);
+private:
+    ScreenCallback* m_callback = nullptr;
+};
+```
+
+**Implementation** (`src/modules/NetInfoScreen.cpp`):
+```cpp
+// Add menu options during interface list building:
+InterfaceInfo backOption;
+backOption.name = "Back";
+backOption.linkUp = false;  // Prevent asterisk indicators on menu items
+m_interfaces.push_back(backOption);
+
+InterfaceInfo mainMenuOption;
+mainMenuOption.name = "Main Menu";
+mainMenuOption.linkUp = false;
+m_interfaces.push_back(mainMenuOption);
+
+// Handle selection in button press logic:
+if (selectedIndex == interfaces.size() - 1) {
+    // "Main Menu" selected
+    notifyCallback("exit_to_main_menu", "");
+    shouldExit = true;
+} else if (selectedIndex == interfaces.size() - 2) {
+    // "Back" selected
+    shouldExit = true;
+}
+```
+
+#### Key Design Principles:
+
+1. **Leverage Existing Infrastructure**: Uses MenuScreenModule's proven `navigateToMainMenu()` mechanism
+2. **ScreenCallback Pattern**: Same communication pattern as GenericListScreen uses successfully
+3. **Defensive Programming**: Always initialize `linkUp = false` for menu items to prevent visual artifacts
+4. **Proper Indexing**: Account for multiple menu items (`size() - 2` for last interface, `size() - 1` for Main Menu)
+5. **Selection Preservation**: Handle all items during refresh cycles to prevent index confusion
+
+#### Benefits:
+- **Reusable**: Works for any ScreenModule (NetInfoScreen, IPPingScreen, etc.)
+- **Proven**: Uses existing, tested MenuScreenModule navigation logic
+- **Consistent**: Matches existing "Main Menu" behavior in other menu levels
+- **Reliable**: Handles edge cases like periodic refresh and selection preservation
 
 ### Known Issues & Limitations
 - **Hardware Dependency**: Requires actual µPanel hardware for full testing

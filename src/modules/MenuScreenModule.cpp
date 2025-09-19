@@ -224,6 +224,12 @@ void MenuScreenModule::executeSubmenuAction(const std::string& moduleId) {
         genericListScreen->setCallback(this);
     }
 
+    // If this is a NetInfoScreen, set its callback to this
+    auto netInfoScreen = std::dynamic_pointer_cast<NetInfoScreen>(module);
+    if (netInfoScreen) {
+        netInfoScreen->setCallback(this);
+    }
+
     // Execute the module
     Logger::debug("Executing submenu module: " + moduleId);
 
@@ -273,6 +279,10 @@ void MenuScreenModule::onScreenAction(const std::string& screenId,
         // Handle selection change
     } else if (action == "item_activated") {
         // Handle item activation
+    } else if (action == "exit_to_main_menu") {
+        // Handle request to navigate to main menu from child screen
+        Logger::debug("Child screen requested exit to main menu: " + screenId);
+        navigateToMainMenu();
     }
 }
 

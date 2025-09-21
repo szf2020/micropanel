@@ -111,11 +111,15 @@ public:
 
 private:
     void executeAndDisplay();
+    void updateContentOnly();
     std::vector<std::string> executeScript();
     virtual std::string getScriptPath();
     virtual std::string getTitle();
+    virtual double getRefreshSeconds();
 
     bool m_shouldExit;
+    double m_refreshSeconds;
+    std::chrono::steady_clock::time_point m_lastExecutionTime;
 };
 
 /**

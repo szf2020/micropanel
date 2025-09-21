@@ -21,6 +21,7 @@
         {"id": "invert_display", "title": "Invert Display"},
         {"id": "brightness", "title": "Brightness"},
         {"id": "system", "title": "System Stats"},
+        {"id": "cpu_temp", "title": "CPU-Temp"},
         {"id": "textbox", "title": "Version"},
         {"id": "power_settings", "title": "Power Settings"},
         {"id": "hdmi_out", "title": "HDMI Timing"},
@@ -149,6 +150,16 @@
       "depends": {
         "script_path": "$MICROPANEL_HOME/scripts/micropanel-version.sh",
         "display_title": "Version"
+      }
+    },
+    {
+      "id": "textbox",
+      "title": "CPU-Temp",
+      "enabled": false,
+      "depends": {
+        "script_path": "$MICROPANEL_HOME/scripts/pi-cpu-temp.sh",
+        "refresh_sec": "1.0",
+        "display_title": "CPU-Temp"
       }
     },
     {

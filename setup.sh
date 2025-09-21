@@ -1,9 +1,10 @@
 #!/bin/sh
 #./setup.sh -t pios
-USAGE="usage:$0 [-v<verbose> -h<help>] -t<type>[debian|pios|]"
+USAGE="usage:$0 [-v<verbose> -h<help>] -t<type>[debian|pios|] [-c<config-file>]"
 PRINTHELP=0
 VERBOSE=0
 TYPE="none"
+CONFIG_FILE=""
 
 # Function to update or add a sysctl parameter
 update_sysctl() {
@@ -31,12 +32,13 @@ log() {
     fi
 }
 
-while getopts hvt: f
+while getopts hvt:c: f
 do
     case $f in
     h) PRINTHELP=1 ;;
     v) VERBOSE=1 ;;
     t) TYPE=$OPTARG ;;
+    c) CONFIG_FILE=$OPTARG ;;
     esac
 done
 
@@ -45,6 +47,7 @@ if [ $PRINTHELP -eq 1 ]; then
     echo "  -h: Show this help message"
     echo "  -v: Verbose mode"
     echo "  -t: Type of configuration (debian, pios)"
+    echo "  -c: Custom config file (optional, defaults to config-TYPE.json)"
     exit 0
 fi
 
@@ -64,8 +67,23 @@ fi
 CURRENT_PATH=$(pwd)
 log "Current path: $CURRENT_PATH" force
 
-# Create service configuration file path based on type
-CONFIG_FILE="$CURRENT_PATH/screens/config-$TYPE.json"
+# Create service configuration file path based on type or use custom config
+if [ -z "$CONFIG_FILE" ]; then
+    # No custom config provided, use default
+    CONFIG_FILE="$CURRENT_PATH/screens/config-$TYPE.json"
+else
+    # Custom config provided, handle different path formats
+    case "$CONFIG_FILE" in
+        /*) # Already absolute path - use as-is
+            ;;
+        */*) # Relative path with directory - make it relative to current directory
+            CONFIG_FILE="$CURRENT_PATH/$CONFIG_FILE"
+            ;;
+        *) # Just filename - look in screens/ directory
+            CONFIG_FILE="$CURRENT_PATH/screens/$CONFIG_FILE"
+            ;;
+    esac
+fi
 if [ ! -f "$CONFIG_FILE" ]; then
     log "Error: Config file $CONFIG_FILE does not exist." force
     echo "Error: Required config file $CONFIG_FILE not found"

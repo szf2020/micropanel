@@ -1,5 +1,6 @@
 #include "MultiInputDevice.h"
 #include "Config.h"
+#include "Logger.h"
 #include <iostream>
 #include <cstring>
 #include <cerrno>
@@ -280,26 +281,26 @@ bool MultiInputDevice::processDeviceEvents(GPIODevice& device, std::function<voi
         if (device.type == DeviceType::ROTARY_ENCODER) {
             // Handle rotary encoder events (EV_REL)
             if (ev.type == EV_REL && ev.code == REL_X) {
-                std::cout << "Rotary encoder " << device.path << " REL_X: " << ev.value << std::endl;
+                Logger::debug("Rotary encoder " + device.path + " REL_X: " + std::to_string(ev.value));
                 processRotaryEncoderEvent(device, ev.value, onRotation);
                 eventProcessed = true;
             }
         } else {
             // Handle button events (EV_KEY) - existing logic
             if (ev.type == EV_KEY && ev.value == 1) { // Key press (not release)
-                std::cout << "GPIO device " << device.path << " key press: " << ev.code
-                          << " (expected: " << device.keycode << ")" << std::endl;
+                Logger::debug("GPIO device " + device.path + " key press: " + std::to_string(ev.code) +
+                              " (expected: " + std::to_string(device.keycode) + ")");
 
                 if (ev.code == device.keycode) {
                     if (ev.code == KEY_ENTER) {
                         // Handle enter button
                         if (onButtonPress) {
-                            std::cout << "ENTER button pressed on " << device.path << std::endl;
+                            Logger::debug("ENTER button pressed on " + device.path);
                             onButtonPress();
                         }
                     } else {
                         // Handle directional buttons
-                        std::cout << "Direction button pressed: " << ev.code << " on " << device.path << std::endl;
+                        Logger::debug("Direction button pressed: " + std::to_string(ev.code) + " on " + device.path);
                         synthesizeMovementEvent(ev.code, onRotation);
                     }
                     eventProcessed = true;
@@ -340,7 +341,7 @@ void MultiInputDevice::synthesizeMovementEvent(int keycode, std::function<void(i
             return;
     }
     
-    std::cout << "Synthesizing " << direction << " movement (value=" << movement << ")" << std::endl;
+    Logger::debug("Synthesizing " + std::string(direction) + " movement (value=" + std::to_string(movement) + ")");
     onRotation(movement);
 }
 
@@ -393,6 +394,6 @@ void MultiInputDevice::processRotaryEncoderEvent(GPIODevice& device, int relativ
     // Mapping: hardware +1 → application -5, hardware -1 → application +5
     int scaledMovement = relativeValue * 5;
 
-    std::cout << "Rotary encoder: raw=" << relativeValue << " → scaled=" << scaledMovement << std::endl;
+    Logger::debug("Rotary encoder: raw=" + std::to_string(relativeValue) + " → scaled=" + std::to_string(scaledMovement));
     onRotation(scaledMovement);
 }

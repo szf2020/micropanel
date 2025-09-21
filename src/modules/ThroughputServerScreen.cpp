@@ -65,7 +65,7 @@ ThroughputServerScreen::ThroughputServerScreen(std::shared_ptr<Display> display,
     }
 
     // Print the final port value being used
-    Logger::info("ThroughputServerScreen: Final configured port is: " + std::to_string(m_port));
+    Logger::debug("ThroughputServerScreen: Final configured port is: " + std::to_string(m_port));
 
     // Get local IP address
     getLocalIpAddress();

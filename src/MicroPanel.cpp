@@ -299,7 +299,7 @@ bool MicroPanel::loadConfigFromJson() {
                 config["persistent_data"]["file_path"].is_string()) {
                 // Override default persistent data file path
                 m_config.persistentDataFile = config["persistent_data"]["file_path"].get<std::string>();
-                Logger::info("Using persistent data file from config: " + m_config.persistentDataFile);
+                Logger::debug("Using persistent data file from config: " + m_config.persistentDataFile);
 
                 // Initialize persistent storage with the new path
                 initPersistentStorage();
@@ -308,7 +308,7 @@ bool MicroPanel::loadConfigFromJson() {
 
         // Initial startup delay to make sure device is fully initialized
         usleep(Config::STARTUP_DELAY);
-        std::cout << "Initializing display..." << std::endl;
+        Logger::debug("Initializing display...");
 
         // Clear the display
         m_display->clear();
@@ -541,7 +541,7 @@ void MicroPanel::initializeModules()
 
 void MicroPanel::registerModuleInMenu(const std::string& moduleName, const std::string& menuTitle) {
     m_mainMenu->addItem(std::make_shared<ActionMenuItem>(menuTitle, [this, moduleName]() {
-        std::cout << "Executing action for module: " << moduleName << std::endl;
+        Logger::debug("Executing action for module: " + moduleName);
         auto module = std::dynamic_pointer_cast<ScreenModule>(m_modules[moduleName]);
         if (module) {
             // Clear main menu flag if this is a menu module
@@ -624,7 +624,7 @@ void MicroPanel::run()
         std::cout << "Starting USB device disconnection monitor" << std::endl;
         m_deviceManager->startDisconnectionMonitor();
     } else {
-        std::cout << "I2C mode detected - skipping USB disconnection monitoring" << std::endl;
+        Logger::debug("I2C mode detected - skipping USB disconnection monitoring");
     }
 
     // Set running flag
@@ -853,7 +853,7 @@ bool MicroPanel::loadModuleDependencies() {
 
 
 void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
-    std::cout << "Running module with GPIO input..." << std::endl;
+    Logger::debug("Running module with GPIO input...");
 
     // Check what type of module this is
     auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
@@ -864,25 +864,25 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
     auto wifiSettingsModule = std::dynamic_pointer_cast<WiFiSettingsScreen>(module);
 
     if (menuModule) {
-        std::cout << "Module type: MenuScreenModule (ID: " << menuModule->getModuleId() << ")" << std::endl;
+        Logger::debug("Module type: MenuScreenModule (ID: " + menuModule->getModuleId() + ")");
     } else if (brightnessModule) {
-        std::cout << "Module type: BrightnessScreen" << std::endl;
+        Logger::debug("Module type: BrightnessScreen");
     } else if (netInfoModule) {
-        std::cout << "Module type: NetInfoScreen" << std::endl;
+        Logger::debug("Module type: NetInfoScreen");
     } else if (pingModule) {
-        std::cout << "Module type: IPPingScreen" << std::endl;
+        Logger::debug("Module type: IPPingScreen");
     } else if (netSettingsModule) {
-        std::cout << "Module type: NetSettingsScreen" << std::endl;
+        Logger::debug("Module type: NetSettingsScreen");
     } else if (wifiSettingsModule) {
-        std::cout << "Module type: WiFiSettingsScreen" << std::endl;
+        Logger::debug("Module type: WiFiSettingsScreen");
     } else {
-        std::cout << "Module type: Generic ScreenModule" << std::endl;
+        Logger::debug("Module type: Generic ScreenModule");
     }
 
     // Enter the module
-    std::cout << "Entering module..." << std::endl;
+    Logger::debug("Entering module...");
     module->enter();
-    std::cout << "Module entered successfully" << std::endl;
+    Logger::debug("Module entered successfully");
 
     bool moduleRunning = true;
     int loopCount = 0;
@@ -890,42 +890,42 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
     while (moduleRunning && m_running) {
         loopCount++;
         if (loopCount % 100 == 0) {  // Log every 100 loops to avoid spam
-            std::cout << "Module loop: " << loopCount << std::endl;
+            Logger::debug("Module loop: " + std::to_string(loopCount));
         }
 
         // Process GPIO input
         if (m_multiInputDevice && m_multiInputDevice->waitForEvents(100) > 0) {
             m_multiInputDevice->processEvents(
                 [&](int direction) {
-                    std::cout << "GPIO rotation in module: " << direction << std::endl;
+                    Logger::debug("GPIO rotation in module: " + std::to_string(direction));
                     simulateRotationForModule(module, direction);
                 },
                 [&]() {
-                    std::cout << "GPIO button press in module" << std::endl;
+                    Logger::debug("GPIO button press in module");
 
                     // Handle button press differently for different module types
                     if (menuModule) {
                         // For menu modules, simulate button press to trigger menu selection
-                        std::cout << "Processing menu button press" << std::endl;
+                        Logger::debug("Processing menu button press");
                         simulateButtonPressForModule(module, moduleRunning);
                     } else if (netInfoModule) {
                         // For NetInfoScreen, use its GPIO button handler
-                        std::cout << "Processing NetInfoScreen button press" << std::endl;
+                        Logger::debug("Processing NetInfoScreen button press");
                         if (!netInfoModule->handleGPIOButtonPress()) {
                             moduleRunning = false;
                         }
                     } else if (pingModule) {
-                        std::cout << "Processing IPPingScreen button press" << std::endl;
+                        Logger::debug("Processing IPPingScreen button press");
                         if (!pingModule->handleGPIOButtonPress()) {
                             moduleRunning = false;
                         }
                     } else if (netSettingsModule) {
-                        std::cout << "Processing NetSettingsScreen button press" << std::endl;
+                        Logger::debug("Processing NetSettingsScreen button press");
                         if (!netSettingsModule->handleGPIOButtonPress()) {
                             moduleRunning = false;
                         }
                     } else if (wifiSettingsModule) {
-                        std::cout << "Processing WiFiSettingsScreen button press" << std::endl;
+                        Logger::debug("Processing WiFiSettingsScreen button press");
                         if (!wifiSettingsModule->handleGPIOButtonPress()) {
                             moduleRunning = false;
                         }
@@ -933,7 +933,7 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
                         // Check for ThroughputServerScreen
                         auto throughputServerModule = std::dynamic_pointer_cast<ThroughputServerScreen>(module);
                         if (throughputServerModule) {
-                            std::cout << "Processing ThroughputServerScreen button press" << std::endl;
+                            Logger::debug("Processing ThroughputServerScreen button press");
                             if (!throughputServerModule->handleGPIOButtonPress()) {
                                 moduleRunning = false;
                             }
@@ -942,7 +942,7 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
                         else {
                             auto throughputClientModule = std::dynamic_pointer_cast<ThroughputClientScreen>(module);
                             if (throughputClientModule) {
-                                std::cout << "Processing ThroughputClientScreen button press" << std::endl;
+                                Logger::debug("Processing ThroughputClientScreen button press");
                                 if (!throughputClientModule->handleGPIOButtonPress()) {
                                     moduleRunning = false;
                                 }
@@ -951,13 +951,13 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
                             else {
                                 auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
                                 if (genericListModule) {
-                                    std::cout << "Processing GenericListScreen button press" << std::endl;
+                                    Logger::debug("Processing GenericListScreen button press");
                                     if (!genericListModule->handleGPIOButtonPress()) {
                                         moduleRunning = false;
                                     }
                                 } else {
                                     // For other non-menu modules, button press exits
-                                    std::cout << "Exiting non-menu module" << std::endl;
+                                    Logger::debug("Exiting non-menu module");
                                     moduleRunning = false;
                                 }
                             }
@@ -990,7 +990,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // Check for IPPingScreen
     auto pingModule = std::dynamic_pointer_cast<IPPingScreen>(module);
     if (pingModule) {
-       std::cout << "SUCCESS: IPPingScreen - calling handleGPIORotation" << std::endl;
+       Logger::debug("SUCCESS: IPPingScreen - calling handleGPIORotation");
        pingModule->handleGPIORotation(direction);
        return;
     }
@@ -998,7 +998,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // Check for NetInfoScreen
     auto netInfoModule = std::dynamic_pointer_cast<NetInfoScreen>(module);
     if (netInfoModule) {
-       std::cout << "SUCCESS: NetInfoScreen - calling handleGPIORotation" << std::endl;
+       Logger::debug("SUCCESS: NetInfoScreen - calling handleGPIORotation");
        netInfoModule->handleGPIORotation(direction);
        return;
     }
@@ -1006,7 +1006,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // Handle MenuScreenModule - this covers ALL menu-type modules!
     auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
     if (menuModule) {
-        std::cout << "Navigating menu: " << direction << std::endl;
+        Logger::debug("Navigating menu: " + std::to_string(direction));
         menuModule->handleGPIORotation(direction);  // This will actually work now!
         return;
     }
@@ -1014,7 +1014,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // For BrightnessScreen - adjust brightness directly
     auto brightnessModule = std::dynamic_pointer_cast<BrightnessScreen>(module);
     if (brightnessModule) {
-        std::cout << "Adjusting brightness: " << direction << std::endl;
+        Logger::debug("Adjusting brightness: " + std::to_string(direction));
         int currentBrightness = m_display->getBrightness();
 
         if (direction < 0) {
@@ -1052,7 +1052,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // Add support for ThroughputServerScreen
     auto throughputServerModule = std::dynamic_pointer_cast<ThroughputServerScreen>(module);
     if (throughputServerModule) {
-        std::cout << "SUCCESS: ThroughputServerScreen - calling handleGPIORotation" << std::endl;
+        Logger::debug("SUCCESS: ThroughputServerScreen - calling handleGPIORotation");
         throughputServerModule->handleGPIORotation(direction);
         return;
     }
@@ -1060,7 +1060,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // Add support for ThroughputClientScreen
     auto throughputClientModule = std::dynamic_pointer_cast<ThroughputClientScreen>(module);
     if (throughputClientModule) {
-        std::cout << "SUCCESS: ThroughputClientScreen - calling handleGPIORotation" << std::endl;
+        Logger::debug("SUCCESS: ThroughputClientScreen - calling handleGPIORotation");
         throughputClientModule->handleGPIORotation(direction);
         return;
     }
@@ -1068,7 +1068,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // Add support for NetSettingsScreen
     auto netSettingsModule = std::dynamic_pointer_cast<NetSettingsScreen>(module);
     if (netSettingsModule) {
-        std::cout << "SUCCESS: NetSettingsScreen - calling handleGPIORotation" << std::endl;
+        Logger::debug("SUCCESS: NetSettingsScreen - calling handleGPIORotation");
         netSettingsModule->handleGPIORotation(direction);
         return;
     }
@@ -1076,7 +1076,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // Add support for WiFiSettingsScreen
     auto wifiSettingsModule = std::dynamic_pointer_cast<WiFiSettingsScreen>(module);
     if (wifiSettingsModule) {
-        std::cout << "SUCCESS: WiFiSettingsScreen - calling handleGPIORotation" << std::endl;
+        Logger::debug("SUCCESS: WiFiSettingsScreen - calling handleGPIORotation");
         wifiSettingsModule->handleGPIORotation(direction);
         return;
     }
@@ -1084,7 +1084,7 @@ void MicroPanel::simulateRotationForModule(std::shared_ptr<ScreenModule> module,
     // Add support for GenericListScreen modules (insert before the default case)
     auto genericListModule = std::dynamic_pointer_cast<GenericListScreen>(module);
     if (genericListModule) {
-       std::cout << "Navigating GenericListScreen: " << direction << std::endl;
+       Logger::debug("Navigating GenericListScreen: " + std::to_string(direction));
        genericListModule->handleGPIORotation(direction);
        return;
     }
@@ -1102,7 +1102,7 @@ void MicroPanel::simulateButtonPressForModule(std::shared_ptr<ScreenModule> modu
 
     auto menuModule = std::dynamic_pointer_cast<MenuScreenModule>(module);
     if (menuModule) {
-        std::cout << "Simulating menu button press - selecting menu item" << std::endl;
+        Logger::debug("Simulating menu button press - selecting menu item");
         if (!menuModule->handleGPIOButtonPress()) {
             moduleRunning = false; // Exit if menu returns false
         }

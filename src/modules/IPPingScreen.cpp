@@ -375,7 +375,7 @@ const std::string& IPPingScreen::getSelectedIp() const {
 
 void IPPingScreen::handleGPIORotation(int direction)
 {
-    std::cout << "IPPingScreen::handleGPIORotation(" << direction << ")" << std::endl;
+    Logger::debug("IPPingScreen::handleGPIORotation(" + std::to_string(direction) + ")");
 
     bool handled = false;
     IPPingMenuState previousState = m_state;
@@ -415,7 +415,7 @@ void IPPingScreen::handleGPIORotation(int direction)
             }
         }
 
-        std::cout << "Menu state changed from " << (int)previousState << " to " << (int)m_state << std::endl;
+        Logger::debug("Menu state changed from " + std::to_string((int)previousState) + " to " + std::to_string((int)m_state));
     }
 
     // Redraw if state changed or IP selector was handled
@@ -428,7 +428,7 @@ void IPPingScreen::handleGPIORotation(int direction)
 
 bool IPPingScreen::handleGPIOButtonPress()
 {
-    std::cout << "IPPingScreen::handleGPIOButtonPress() - state: " << (int)m_state << std::endl;
+    Logger::debug("IPPingScreen::handleGPIOButtonPress() - state: " + std::to_string((int)m_state));
 
     bool redrawNeeded = false;
 
@@ -436,7 +436,7 @@ bool IPPingScreen::handleGPIOButtonPress()
     switch (m_state) {
         case IPPingMenuState::MENU_STATE_IP:
             // Let IP selector handle button
-            std::cout << "Handling IP selector button press" << std::endl;
+            Logger::debug("Handling IP selector button press");
             if (m_ipSelector->handleButton()) {
                 redrawNeeded = true;
             }
@@ -444,14 +444,14 @@ bool IPPingScreen::handleGPIOButtonPress()
 
         case IPPingMenuState::MENU_STATE_PING:
             // Start ping
-            std::cout << "Starting ping operation" << std::endl;
+            Logger::debug("Starting ping operation");
             startPing();
             redrawNeeded = true;
             break;
 
         case IPPingMenuState::MENU_STATE_EXIT:
             // Exit screen
-            std::cout << "Exit selected - leaving IPPingScreen" << std::endl;
+            Logger::debug("Exit selected - leaving IPPingScreen");
             m_shouldExit = true;
             return false; // Exit the screen
     }

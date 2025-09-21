@@ -100,7 +100,7 @@ bool PersistentStorage::initialize(const std::string& filePath) {
         m_data = nlohmann::json::object();
         
         // This is not an error - it could be the first run
-        Logger::info("Starting with empty persistent storage (file not found or invalid)");
+        Logger::debug("Starting with empty persistent storage (file not found or invalid)");
     }
     
     m_initialized = true;

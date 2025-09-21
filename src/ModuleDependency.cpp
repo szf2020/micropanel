@@ -53,7 +53,7 @@ bool ModuleDependency::loadDependencies(const nlohmann::json& config) {
             }
         }
         
-        Logger::info("Module dependencies loaded successfully");
+        Logger::debug("Module dependencies loaded successfully");
         return true;
     } catch (const std::exception& e) {
         Logger::error("Error loading module dependencies: " + std::string(e.what()));

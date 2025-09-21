@@ -776,7 +776,7 @@ int GenericListScreen::parseProgressFromLog()
     return lastPercentage;
 }
 void GenericListScreen::handleGPIORotation(int direction) {
-    std::cout << "GenericListScreen GPIO rotation: " << direction << std::endl;
+    Logger::debug("GenericListScreen GPIO rotation: " + std::to_string(direction));
 
     // Use the same navigation logic as handleInput()
     int oldSelection = m_selectedIndex;
@@ -809,7 +809,7 @@ void GenericListScreen::handleGPIORotation(int direction) {
 }
 
 bool GenericListScreen::handleGPIOButtonPress() {
-    std::cout << "GenericListScreen GPIO button press - selecting item" << std::endl;
+    Logger::debug("GenericListScreen GPIO button press - selecting item");
 
     // Use the same selection logic as handleInput()
     if (m_selectedIndex >= 0 && m_selectedIndex < static_cast<int>(m_items.size())) {

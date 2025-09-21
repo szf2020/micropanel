@@ -579,11 +579,11 @@ void NetInfoScreen::Impl::renderInterfaceDetails(int interfaceIndex)
 // GPIO handling methods
 void NetInfoScreen::handleGPIORotation(int direction)
 {
-    std::cout << "NetInfoScreen::handleGPIORotation(" << direction << ")" << std::endl;
+    Logger::debug("NetInfoScreen::handleGPIORotation(" + std::to_string(direction) + ")");
 
     // Only handle rotation if we're in the main menu (not in submenu)
     if (m_pImpl->m_inSubmenu) {
-        std::cout << "Ignoring rotation - in submenu" << std::endl;
+        Logger::debug("Ignoring rotation - in submenu");
         return;
     }
 
@@ -603,7 +603,7 @@ void NetInfoScreen::handleGPIORotation(int direction)
 
     // Update display if selection changed
     if (oldSelection != m_pImpl->m_selectedInterface) {
-        std::cout << "Selection changed from " << oldSelection << " to " << m_pImpl->m_selectedInterface << std::endl;
+        Logger::debug("Selection changed from " + std::to_string(oldSelection) + " to " + std::to_string(m_pImpl->m_selectedInterface));
         m_pImpl->updateSelection(oldSelection, m_pImpl->m_selectedInterface);
     }
 
@@ -612,29 +612,29 @@ void NetInfoScreen::handleGPIORotation(int direction)
 
 bool NetInfoScreen::handleGPIOButtonPress()
 {
-    std::cout << "NetInfoScreen::handleGPIOButtonPress()" << std::endl;
+    Logger::debug("NetInfoScreen::handleGPIOButtonPress()");
 
     if (m_pImpl->m_inSubmenu) {
         // In submenu, go back to main menu
-        std::cout << "In submenu - returning to main menu" << std::endl;
+        Logger::debug("In submenu - returning to main menu");
         m_pImpl->m_inSubmenu = false;
         m_pImpl->renderMenu(true);
     } else {
         // In main menu
         if (m_pImpl->m_selectedInterface == static_cast<int>(m_pImpl->m_interfaces.size()) - 1) {
             // "Main Menu" selected - trigger callback to navigate to main menu
-            std::cout << "Main Menu selected - triggering callback to navigate to main menu" << std::endl;
+            Logger::debug("Main Menu selected - triggering callback to navigate to main menu");
             notifyCallback("exit_to_main_menu", "");
             m_pImpl->m_shouldExit = true;
             return false; // Exit the screen
         } else if (m_pImpl->m_selectedInterface == static_cast<int>(m_pImpl->m_interfaces.size()) - 2) {
             // "Back" selected - exit normally
-            std::cout << "Back selected - exiting NetInfoScreen" << std::endl;
+            Logger::debug("Back selected - exiting NetInfoScreen");
             m_pImpl->m_shouldExit = true;
             return false; // Exit the screen
         } else {
             // Interface selected - show details
-            std::cout << "Interface selected - showing details for interface " << m_pImpl->m_selectedInterface << std::endl;
+            Logger::debug("Interface selected - showing details for interface " + std::to_string(m_pImpl->m_selectedInterface));
             m_pImpl->m_inSubmenu = true;
             m_pImpl->renderInterfaceDetails(m_pImpl->m_selectedInterface);
         }

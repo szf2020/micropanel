@@ -80,6 +80,7 @@ set(SOURCES_MENU
 set(SOURCES_MODULES
     src/modules/ScreenModule.cpp
     src/modules/SystemStatsScreen.cpp
+    src/modules/TextBoxScreen.cpp
     src/modules/NetworkInfoScreen.cpp
     src/modules/NetSettingsScreen.cpp
     src/modules/NetInfoScreen.cpp
@@ -166,6 +167,7 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/list-images.sh
         scripts/play-image.sh
         scripts/stop-image.sh
+        scripts/micropanel-version.sh
         DESTINATION usr/bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     )

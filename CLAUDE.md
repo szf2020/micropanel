@@ -304,6 +304,92 @@ if (selectedIndex == interfaces.size() - 1) {
 - **Consistent**: Matches existing "Main Menu" behavior in other menu levels
 - **Reliable**: Handles edge cases like periodic refresh and selection preservation
 
+### Adding Generic Script Execution with TextBoxScreen
+
+**Problem**: Need to display output from shell scripts (version info, hardware details, etc.) with a simple "press to return" interface.
+
+**Solution**: Use the generic TextBoxScreen module that executes configurable scripts and displays output.
+
+#### TextBoxScreen Implementation Pattern:
+
+**Step 1: Create Module Registration**
+Add to `src/MicroPanel.cpp` in `initializeModules()`:
+```cpp
+m_modules["textbox"] = std::make_shared<TextBoxScreen>(m_display, m_inputDevice);
+```
+
+**Step 2: Add to CMakeLists.txt**
+Include in `SOURCES_MODULES`:
+```cmake
+set(SOURCES_MODULES
+    src/modules/SystemStatsScreen.cpp
+    src/modules/TextBoxScreen.cpp  # Add this line
+    # ... other modules
+)
+```
+
+**Step 3: Configure in JSON**
+```json
+{
+  "id": "textbox",
+  "title": "Version",
+  "enabled": false,
+  "depends": {
+    "script_path": "/usr/bin/micropanel-version.sh",
+    "display_title": "Version"
+  }
+}
+```
+
+**Step 4: Add to Menu Structure**
+```json
+{
+  "id": "system_menu",
+  "title": "System",
+  "enabled": true,
+  "type": "menu",
+  "submenus": [
+    {"id": "textbox", "title": "Version"},
+    {"id": "back", "title": "Back"}
+  ]
+}
+```
+
+#### TextBoxScreen Features:
+- **Configurable Script Path**: Reads `script_path` from JSON dependencies
+- **Configurable Display Title**: Reads `display_title` from JSON dependencies
+- **Multi-line Output**: Displays up to 4 lines of script output, centered on OLED
+- **Auto-truncation**: Lines longer than 16 characters are automatically truncated
+- **Press to Return**: Shows "Press to return" message and exits on any input
+- **GPIO Support**: Full GPIO mode compatibility with rotation and button press handling
+- **Error Handling**: Gracefully handles script failures and empty output
+- **ModuleDependency Integration**: Uses same pattern as other configurable modules
+
+#### Creating Multiple TextBox Instances:
+For different scripts, create additional JSON entries:
+```json
+{
+  "id": "textbox2",
+  "title": "Hardware Info",
+  "enabled": false,
+  "depends": {
+    "script_path": "/usr/bin/hardware-info.sh",
+    "display_title": "Hardware"
+  }
+}
+```
+
+#### TextBoxScreen File Structure:
+- **Header**: `include/ScreenModules.h` - Class declaration
+- **Implementation**: `src/modules/TextBoxScreen.cpp` - Full implementation
+- **Registration**: `src/MicroPanel.cpp` - Module registration
+- **Build**: `CMakeLists.txt` - Source file inclusion
+- **Config**: `screens/*.json` - JSON configuration
+
+**Navigation Flow**: Menu → TextBox → (script executes) → (shows output) → (press any key) → Back to Menu
+
+This pattern provides a reusable solution for any script that outputs text information to the OLED display.
+
 ### Known Issues & Limitations
 - **Hardware Dependency**: Requires actual µPanel hardware for full testing
 - **Display Command Delays**: Navigation has slight delays due to required 10ms delays between display commands

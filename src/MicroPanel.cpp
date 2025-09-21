@@ -526,6 +526,7 @@ void MicroPanel::initializeModules()
     m_modules["brightness"] = std::make_shared<BrightnessScreen>(m_display, m_inputDevice);
     m_modules["network"] = std::make_shared<NetworkInfoScreen>(m_display, m_inputDevice);
     m_modules["system"] = std::make_shared<SystemStatsScreen>(m_display, m_inputDevice);
+    m_modules["textbox"] = std::make_shared<TextBoxScreen>(m_display, m_inputDevice);
     m_modules["internet"] = std::make_shared<InternetTestScreen>(m_display, m_inputDevice);
     m_modules["wifi"] = std::make_shared<WiFiSettingsScreen>(m_display, m_inputDevice);
     m_modules["ping"] = std::make_shared<IPPingScreen>(m_display, m_inputDevice);

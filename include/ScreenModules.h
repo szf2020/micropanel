@@ -93,6 +93,32 @@ private:
 };
 
 /**
+ * Generic text display screen that executes a script and shows output
+ */
+class TextBoxScreen : public ScreenModule {
+public:
+    TextBoxScreen(std::shared_ptr<Display> display, std::shared_ptr<InputDevice> input);
+
+    void enter() override;
+    void update() override;
+    void exit() override;
+    bool handleInput() override;
+    std::string getModuleId() const override { return "textbox"; }
+
+    // GPIO support methods
+    void handleGPIORotation(int direction);
+    bool handleGPIOButtonPress();
+
+private:
+    void executeAndDisplay();
+    std::vector<std::string> executeScript();
+    virtual std::string getScriptPath();
+    virtual std::string getTitle();
+
+    bool m_shouldExit;
+};
+
+/**
  * Brightness control screen
  */
 class BrightnessScreen : public ScreenModule {

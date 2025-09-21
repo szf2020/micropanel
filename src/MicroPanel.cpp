@@ -357,6 +357,8 @@ bool MicroPanel::loadConfigFromJson() {
             bool isAction = moduleType == "action";
             // Check if this is a GenericList type module
             bool isGenericList = moduleType == "GenericList";
+            // Check if this is a textbox type module
+            bool isTextBox = moduleType == "textbox";
 
             // Always create menu modules, regardless of enabled status
             if (isMenu) {
@@ -403,6 +405,20 @@ bool MicroPanel::loadConfigFromJson() {
                 if (enabled) {
                     registerModuleInMenu(id, title);
                     Logger::debug("Added GenericList module to main menu: " + id);
+                }
+            }
+            // Handle textbox modules
+            else if (isTextBox) {
+                Logger::debug("Creating textbox module: " + id);
+                // Create a new TextBoxScreen instance for this module
+                auto textboxModule = std::make_shared<TextBoxScreen>(m_display, m_inputDevice);
+                textboxModule->setId(id);
+                // Add to module registry
+                m_modules[id] = textboxModule;
+                // Add to main menu only if enabled
+                if (enabled) {
+                    registerModuleInMenu(id, title);
+                    Logger::debug("Added textbox module to main menu: " + id);
                 }
             }
             // For regular modules, only add to main menu if enabled
@@ -862,6 +878,7 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
     auto pingModule = std::dynamic_pointer_cast<IPPingScreen>(module);
     auto netSettingsModule = std::dynamic_pointer_cast<NetSettingsScreen>(module);
     auto wifiSettingsModule = std::dynamic_pointer_cast<WiFiSettingsScreen>(module);
+    auto textboxModule = std::dynamic_pointer_cast<TextBoxScreen>(module);
 
     if (menuModule) {
         Logger::debug("Module type: MenuScreenModule (ID: " + menuModule->getModuleId() + ")");
@@ -875,6 +892,8 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
         Logger::debug("Module type: NetSettingsScreen");
     } else if (wifiSettingsModule) {
         Logger::debug("Module type: WiFiSettingsScreen");
+    } else if (textboxModule) {
+        Logger::debug("Module type: TextBoxScreen (ID: " + textboxModule->getModuleId() + ")");
     } else {
         Logger::debug("Module type: Generic ScreenModule");
     }
@@ -929,6 +948,11 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
                         if (!wifiSettingsModule->handleGPIOButtonPress()) {
                             moduleRunning = false;
                         }
+                    } else if (textboxModule) {
+                        Logger::debug("Processing TextBoxScreen button press");
+                        if (!textboxModule->handleGPIOButtonPress()) {
+                            moduleRunning = false;
+                        }
                     } else {
                         // Check for ThroughputServerScreen
                         auto throughputServerModule = std::dynamic_pointer_cast<ThroughputServerScreen>(module);
@@ -973,6 +997,18 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
         } catch (const std::exception& e) {
             std::cout << "Exception in module update: " << e.what() << std::endl;
             moduleRunning = false;
+        }
+
+        // For TextBoxScreen, also call handleInput() to enable periodic refresh
+        if (textboxModule) {
+            try {
+                if (!textboxModule->handleInput()) {
+                    moduleRunning = false;
+                }
+            } catch (const std::exception& e) {
+                std::cout << "Exception in TextBoxScreen handleInput: " << e.what() << std::endl;
+                moduleRunning = false;
+            }
         }
 
         // Small delay

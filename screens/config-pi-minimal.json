@@ -22,7 +22,7 @@
         {"id": "brightness", "title": "Brightness"},
         {"id": "system", "title": "System Stats"},
         {"id": "cpu_temp", "title": "CPU-Temp"},
-        {"id": "textbox", "title": "Version"},
+        {"id": "version_info", "title": "Version"},
         {"id": "power_settings", "title": "Power Settings"},
         {"id": "hdmi_out", "title": "HDMI Timing"},
         {"id": "back", "title": "Back"}
@@ -144,18 +144,20 @@
       "enabled": false
     },
     {
-      "id": "textbox",
+      "id": "version_info",
       "title": "Version",
       "enabled": false,
+      "type": "textbox",
       "depends": {
         "script_path": "$MICROPANEL_HOME/scripts/micropanel-version.sh",
         "display_title": "Version"
       }
     },
     {
-      "id": "textbox",
+      "id": "cpu_temp",
       "title": "CPU-Temp",
       "enabled": false,
+      "type": "textbox",
       "depends": {
         "script_path": "$MICROPANEL_HOME/scripts/pi-cpu-temp.sh",
         "refresh_sec": "1.0",

@@ -13,7 +13,7 @@
 #include <thread>
 
 TextBoxScreen::TextBoxScreen(std::shared_ptr<Display> display, std::shared_ptr<InputDevice> input)
-    : ScreenModule(display, input), m_shouldExit(false), m_refreshSeconds(0.0)
+    : ScreenModule(display, input), m_shouldExit(false), m_refreshSeconds(0.0), m_moduleId("textbox")
 {
 }
 
@@ -23,9 +23,11 @@ void TextBoxScreen::enter()
 
     // Reset state
     m_shouldExit = false;
+    m_previousContent.clear(); // Clear previous content for fresh start
 
     // Get refresh configuration
     m_refreshSeconds = getRefreshSeconds();
+    Logger::debug("TextBoxScreen (" + m_moduleId + "): Configured refresh interval: " + std::to_string(m_refreshSeconds) + " seconds");
 
     // Initialize timing
     m_lastExecutionTime = std::chrono::steady_clock::now();
@@ -77,9 +79,15 @@ bool TextBoxScreen::handleInput()
         auto timeSinceLastExecution = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastExecutionTime);
         auto refreshIntervalMs = std::chrono::milliseconds(static_cast<long>(m_refreshSeconds * 1000));
 
+        // Debug timing information (only every 10th check to reduce spam)
+        static int debugCounter = 0;
+        if (++debugCounter % 10 == 0) {
+            Logger::debug("TextBoxScreen (" + m_moduleId + "): Time since last execution: " + std::to_string(timeSinceLastExecution.count()) + "ms, interval: " + std::to_string(refreshIntervalMs.count()) + "ms");
+        }
+
         // Check if it's time for a refresh
         if (timeSinceLastExecution >= refreshIntervalMs) {
-            Logger::debug("TextBoxScreen: Refreshing content");
+            Logger::debug("TextBoxScreen (" + m_moduleId + "): Refreshing content");
 
             // Record start time for script execution
             auto scriptStartTime = std::chrono::steady_clock::now();
@@ -94,8 +102,10 @@ bool TextBoxScreen::handleInput()
             // Update last execution time
             m_lastExecutionTime = scriptStartTime;
 
-            Logger::debug("TextBoxScreen: Script execution took " + std::to_string(scriptExecutionTime.count()) + "ms");
+            Logger::debug("TextBoxScreen (" + m_moduleId + "): Script execution took " + std::to_string(scriptExecutionTime.count()) + "ms");
         }
+    } else {
+        Logger::debug("TextBoxScreen (" + m_moduleId + "): Static mode - no refresh configured");
     }
 
     return !m_shouldExit; // Continue running unless exit flag is set
@@ -149,50 +159,82 @@ void TextBoxScreen::executeAndDisplay()
 
 void TextBoxScreen::updateContentOnly()
 {
-    // Clear only the content area (lines 16, 24, 32, 40, 48)
-    int contentYPositions[] = {16, 24, 32, 40, 48};
-    for (int yPos : contentYPositions) {
-        m_display->drawText(0, yPos, "                "); // 16 spaces to clear line
-        usleep(Config::DISPLAY_CMD_DELAY);
-    }
+    // Execute script and get new output
+    std::vector<std::string> newLines = executeScript();
 
-    // Execute script and get output
-    std::vector<std::string> lines = executeScript();
+    // Compare with previous content and update only changed lines
+    updateChangedLinesOnly(newLines);
 
-    // Display up to 4 lines of output (lines 16, 24, 32, 40)
-    int outputYPositions[] = {16, 24, 32, 40};
-    for (size_t i = 0; i < lines.size() && i < 4; ++i) {
-        std::string line = lines[i];
+    // Store current content for next comparison
+    m_previousContent = newLines;
+}
 
-        // Truncate line if too long (16 chars max for display)
-        if (line.length() > 16) {
-            line = line.substr(0, 16);
+void TextBoxScreen::updateChangedLinesOnly(const std::vector<std::string>& newLines)
+{
+    // Content display positions (up to 4 lines: 16, 24, 32, 40)
+    int contentYPositions[] = {16, 24, 32, 40};
+    const size_t maxDisplayLines = 4;
+
+    // Compare each line position (0-3) and update only if changed
+    for (size_t i = 0; i < maxDisplayLines; ++i) {
+        std::string newLine = (i < newLines.size()) ? newLines[i] : "";
+        std::string oldLine = (i < m_previousContent.size()) ? m_previousContent[i] : "";
+
+        // Only update this line if content changed
+        if (newLine != oldLine) {
+            Logger::debug("TextBoxScreen (" + m_moduleId + "): Updating line " + std::to_string(i) + ": '" + newLine + "'");
+            updateSingleLine(i, newLine, contentYPositions[i]);
         }
+    }
 
-        // Center the text and create a 16-character padded string
-        int textPos = std::max(0, (16 - static_cast<int>(line.length())) / 2);
-        std::string paddedLine(16, ' '); // Create 16-space string
-
-        // Copy the line into the centered position
-        for (size_t j = 0; j < line.length(); ++j) {
-            if (textPos + j < 16) {
-                paddedLine[textPos + j] = line[j];
-            }
+    // Handle the case where new output has fewer lines than before
+    // Clear any leftover lines from previous longer output
+    if (newLines.size() < m_previousContent.size()) {
+        for (size_t i = newLines.size(); i < m_previousContent.size() && i < maxDisplayLines; ++i) {
+            Logger::debug("TextBoxScreen (" + m_moduleId + "): Clearing line " + std::to_string(i));
+            updateSingleLine(i, "", contentYPositions[i]); // Clear line
         }
-
-        m_display->drawText(0, outputYPositions[i], paddedLine);
-        usleep(Config::DISPLAY_CMD_DELAY);
     }
 
-    // If no output or error, show message
-    if (lines.empty()) {
-        std::string noOutput = "No output       "; // Padded to 16 chars
-        m_display->drawText(0, 16, noOutput);
-        usleep(Config::DISPLAY_CMD_DELAY);
+    // Update "No output" message if needed
+    bool hadContent = !m_previousContent.empty();
+    bool hasContent = !newLines.empty();
+
+    if (hadContent != hasContent) {
+        if (!hasContent) {
+            // Show "No output" message
+            Logger::debug("TextBoxScreen (" + m_moduleId + "): Showing 'No output' message");
+            updateSingleLine(0, "No output", contentYPositions[0]);
+        }
+        // If we now have content, the lines above will be updated naturally
+    }
+}
+
+void TextBoxScreen::updateSingleLine(size_t lineIndex, const std::string& content, int yPosition)
+{
+    std::string line = content;
+
+    // Replace UTF-8 degree symbol with ASCII equivalent
+    line = replaceUnicodeChars(line);
+
+    // Truncate line if too long (16 chars max for display)
+    if (line.length() > 16) {
+        line = line.substr(0, 16);
     }
 
-    // Redraw instruction at bottom
-    m_display->drawText(0, 48, "Press to return");
+    // Center the text and create a 16-character padded string
+    int textPos = std::max(0, (16 - static_cast<int>(line.length())) / 2);
+    std::string paddedLine(16, ' '); // Create 16-space string filled with spaces
+
+    // Copy the line into the centered position
+    for (size_t j = 0; j < line.length(); ++j) {
+        if (textPos + j < 16) {
+            paddedLine[textPos + j] = line[j];
+        }
+    }
+
+    // Update only this single line
+    m_display->drawText(0, yPosition, paddedLine);
     usleep(Config::DISPLAY_CMD_DELAY);
 }
 
@@ -238,10 +280,10 @@ std::vector<std::string> TextBoxScreen::executeScript()
 std::string TextBoxScreen::getScriptPath()
 {
     auto& dependencies = ModuleDependency::getInstance();
-    std::string scriptPath = dependencies.getDependencyPath("textbox", "script_path");
+    std::string scriptPath = dependencies.getDependencyPath(m_moduleId, "script_path");
 
     if (scriptPath.empty()) {
-        Logger::debug("No script_path dependency found for textbox, using default");
+        Logger::debug("No script_path dependency found for " + m_moduleId + ", using default");
         return "/usr/bin/micropanel-version.sh";  // fallback default
     }
 
@@ -252,10 +294,10 @@ std::string TextBoxScreen::getScriptPath()
 std::string TextBoxScreen::getTitle()
 {
     auto& dependencies = ModuleDependency::getInstance();
-    std::string title = dependencies.getDependencyPath("textbox", "display_title");
+    std::string title = dependencies.getDependencyPath(m_moduleId, "display_title");
 
     if (title.empty()) {
-        Logger::debug("No display_title dependency found for textbox, using default");
+        Logger::debug("No display_title dependency found for " + m_moduleId + ", using default");
         return "Info";  // fallback default
     }
 
@@ -265,10 +307,10 @@ std::string TextBoxScreen::getTitle()
 double TextBoxScreen::getRefreshSeconds()
 {
     auto& dependencies = ModuleDependency::getInstance();
-    std::string refreshStr = dependencies.getDependencyPath("textbox", "refresh_sec");
+    std::string refreshStr = dependencies.getDependencyPath(m_moduleId, "refresh_sec");
 
     if (refreshStr.empty()) {
-        Logger::debug("No refresh_sec dependency found for textbox, using static mode");
+        Logger::debug("No refresh_sec dependency found for " + m_moduleId + ", using static mode");
         return 0.0;  // 0.0 means static mode (no refresh)
     }
 
@@ -295,4 +337,30 @@ void TextBoxScreen::handleGPIORotation(int direction) {
 bool TextBoxScreen::handleGPIOButtonPress() {
     // Exit on GPIO button press
     return false;
+}
+
+void TextBoxScreen::setId(const std::string& id) {
+    m_moduleId = id;
+    Logger::debug("TextBoxScreen: Set dynamic ID to: " + id);
+}
+
+std::string TextBoxScreen::replaceUnicodeChars(const std::string& input) {
+    std::string result = input;
+
+    // Replace UTF-8 degree symbol (°) with ASCII equivalent
+    // The degree symbol in UTF-8 is: 0xC2 0xB0
+    size_t pos = 0;
+    while ((pos = result.find("\xC2\xB0", pos)) != std::string::npos) {
+        result.replace(pos, 2, "*");  // Replace with asterisk
+        pos += 1;  // Move past the replacement
+    }
+
+    // Add more Unicode replacements as needed
+    // Example: Replace other common symbols
+    // while ((pos = result.find("µ", pos)) != std::string::npos) {
+    //     result.replace(pos, 2, "u");
+    //     pos += 1;
+    // }
+
+    return result;
 }

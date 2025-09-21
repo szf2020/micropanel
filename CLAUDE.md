@@ -149,7 +149,17 @@ When creating new interactive screen modules that need GPIO input support:
 
 ## Recent Development History
 
-### GPIO Support Expansion (Latest)
+### TextBoxScreen Periodic Refresh & Multiple Instances (Latest)
+- **Periodic Script Execution**: Added `refresh_sec` configuration for auto-refreshing script output at configurable intervals (0.5s to 5s+)
+- **Anti-Flicker Updates**: Implemented selective line updates that only refresh changed content, eliminating display artifacts
+- **Multiple Instance Support**: Extended TextBoxScreen to support multiple instances using `"type": "textbox"` pattern (following GenericListScreen approach)
+- **Dynamic Module IDs**: Added `setId()` method and dynamic `getModuleId()` for unique dependency isolation between instances
+- **GPIO Integration**: Fixed TextBoxScreen periodic refresh in GPIO mode by adding proper `handleInput()` calls in `runModuleWithGPIOInput()`
+- **Unicode Character Support**: Added automatic UTF-8 to ASCII conversion for degree symbols (°→*) and other special characters
+- **Generic Script Compatibility**: Enhanced system works with any script output (1-4 lines) without script-specific modifications
+- **Type-Based Module Pattern**: Documented reusable pattern for creating multiple instances of any module class using JSON `type` field
+
+### GPIO Support Expansion
 - **NetSettingsScreen & WiFiSettingsScreen GPIO Support**: Added complete GPIO input support for network configuration screens
 - **Complex Menu Navigation**: Implemented multi-level GPIO navigation for NetSettingsScreen (main menu, mode selection, IP address editing)
 - **IP Selector Integration**: GPIO input now works seamlessly with IP address editing fields in network settings
@@ -306,82 +316,171 @@ if (selectedIndex == interfaces.size() - 1) {
 
 ### Adding Generic Script Execution with TextBoxScreen
 
-**Problem**: Need to display output from shell scripts (version info, hardware details, etc.) with a simple "press to return" interface.
+**Problem**: Need to display output from shell scripts (version info, hardware details, CPU temperature, etc.) with both static and auto-refreshing display capabilities.
 
-**Solution**: Use the generic TextBoxScreen module that executes configurable scripts and displays output.
+**Solution**: Use the enhanced TextBoxScreen module that supports multiple instances, periodic refresh, and anti-flicker updates.
 
-#### TextBoxScreen Implementation Pattern:
+#### Enhanced TextBoxScreen Features (Latest):
+- ✅ **Multiple Instances**: Create unlimited TextBoxScreen instances with unique IDs using `"type": "textbox"`
+- ✅ **Periodic Refresh**: Auto-refresh script output at configurable intervals (`refresh_sec`)
+- ✅ **Anti-Flicker Updates**: Selective line updates to minimize display artifacts
+- ✅ **Unicode Support**: Automatic UTF-8 to ASCII conversion (e.g., `°` → `*`)
+- ✅ **Generic Script Support**: Works with any script output (1-4 lines)
+- ✅ **GPIO Full Support**: Complete GPIO mode compatibility
+- ✅ **Backward Compatible**: Static mode when no `refresh_sec` specified
 
-**Step 1: Create Module Registration**
-Add to `src/MicroPanel.cpp` in `initializeModules()`:
-```cpp
-m_modules["textbox"] = std::make_shared<TextBoxScreen>(m_display, m_inputDevice);
-```
+#### Multiple TextBox Instances Pattern (Recommended):
 
-**Step 2: Add to CMakeLists.txt**
-Include in `SOURCES_MODULES`:
-```cmake
-set(SOURCES_MODULES
-    src/modules/SystemStatsScreen.cpp
-    src/modules/TextBoxScreen.cpp  # Add this line
-    # ... other modules
-)
-```
+Following the **GenericListScreen pattern**, multiple TextBoxScreen instances are supported using the `"type": "textbox"` field:
 
-**Step 3: Configure in JSON**
+**Step 1: Configure Multiple Instances in JSON**
 ```json
 {
-  "id": "textbox",
+  "id": "version_info",
   "title": "Version",
   "enabled": false,
+  "type": "textbox",
   "depends": {
-    "script_path": "/usr/bin/micropanel-version.sh",
+    "script_path": "$MICROPANEL_HOME/scripts/micropanel-version.sh",
     "display_title": "Version"
+  }
+},
+{
+  "id": "cpu_temp",
+  "title": "CPU-Temp",
+  "enabled": false,
+  "type": "textbox",
+  "depends": {
+    "script_path": "$MICROPANEL_HOME/scripts/pi-cpu-temp.sh",
+    "refresh_sec": "1.0",
+    "display_title": "CPU-Temp"
   }
 }
 ```
 
-**Step 4: Add to Menu Structure**
+**Step 2: Add to Menu Structure**
 ```json
 {
   "id": "system_menu",
   "title": "System",
-  "enabled": true,
   "type": "menu",
   "submenus": [
-    {"id": "textbox", "title": "Version"},
+    {"id": "version_info", "title": "Version"},
+    {"id": "cpu_temp", "title": "CPU-Temp"},
     {"id": "back", "title": "Back"}
   ]
 }
 ```
 
-#### TextBoxScreen Features:
-- **Configurable Script Path**: Reads `script_path` from JSON dependencies
-- **Configurable Display Title**: Reads `display_title` from JSON dependencies
-- **Multi-line Output**: Displays up to 4 lines of script output, centered on OLED
-- **Auto-truncation**: Lines longer than 16 characters are automatically truncated
-- **Press to Return**: Shows "Press to return" message and exits on any input
-- **GPIO Support**: Full GPIO mode compatibility with rotation and button press handling
-- **Error Handling**: Gracefully handles script failures and empty output
-- **ModuleDependency Integration**: Uses same pattern as other configurable modules
+**Step 3: No Code Changes Required**
+The system automatically:
+- Creates separate TextBoxScreen instances for each `"type": "textbox"` entry
+- Assigns unique IDs for dependency isolation
+- Handles both static and refresh modes
 
-#### Creating Multiple TextBox Instances:
-For different scripts, create additional JSON entries:
+#### Periodic Refresh Configuration:
+
+**Static Mode** (Original behavior):
+```json
+"depends": {
+  "script_path": "/path/to/script.sh",
+  "display_title": "Title"
+}
+```
+
+**Refresh Mode** (New capability):
+```json
+"depends": {
+  "script_path": "/path/to/script.sh",
+  "refresh_sec": "0.5",               // Refresh every 0.5 seconds
+  "display_title": "Live Data"
+}
+```
+
+**Refresh Timing Guidelines:**
+- **Minimum recommended**: `"0.5"` (500ms)
+- **CPU monitoring**: `"1.0"` (1 second)
+- **Temperature**: `"2.0"` (2 seconds)
+- **Network stats**: `"5.0"` (5 seconds)
+
+#### Anti-Flicker Implementation:
+
+The enhanced TextBoxScreen uses **selective line updates**:
+```
+Before: Clear entire display → Redraw all 5 lines (flicker)
+After:  Compare old vs new → Update only changed lines (smooth)
+```
+
+**Example**: CPU temperature script output
+- Line 0: `"Temp: 42*C"` → `"Temp: 43*C"` ✅ **Updates**
+- Line 1: `"Freq: 800MHz"` → `"Freq: 800MHz"` ❌ **No update**
+- Line 2: `"Usage: 28.6%"` → `"Usage: 15.2%"` ✅ **Updates**
+- Line 3: `"23:06:31"` → `"23:06:32"` ✅ **Updates**
+
+#### Unicode Character Handling:
+
+**Problem**: SSD1306 displays only support ASCII 0-127, but scripts may output Unicode.
+
+**Solution**: Automatic UTF-8 to ASCII conversion in TextBoxScreen:
+- `°` (degree symbol) → `*` (asterisk)
+- `µ` (micro symbol) → `u` (letter u)
+- Extensible for additional Unicode characters
+
+#### Creating Reusable Module Types Pattern:
+
+**For Any Module Class** (NetSettingsScreen, TextBoxScreen, etc.):
+
+**Step 1: Add Dynamic ID Support**
+```cpp
+// In include/ScreenModules.h
+class YourModuleScreen : public ScreenModule {
+private:
+    std::string m_moduleId;  // Add member variable
+public:
+    void setId(const std::string& id) { m_moduleId = id; }
+    std::string getModuleId() const override { return m_moduleId; }
+};
+
+// Update dependency lookups to use m_moduleId instead of hardcoded strings
+dependencies.getDependencyPath(m_moduleId, "config_key");
+```
+
+**Step 2: Add Type Handling in MicroPanel.cpp**
+```cpp
+// In loadConfigFromJson(), add after existing type checks:
+bool isYourModuleType = moduleType == "your_module_type";
+
+if (isYourModuleType) {
+    auto yourModule = std::make_shared<YourModuleScreen>(m_display, m_inputDevice);
+    yourModule->setId(id);
+    m_modules[id] = yourModule;
+    if (enabled) {
+        registerModuleInMenu(id, title);
+    }
+}
+```
+
+**Step 3: Use in JSON Configuration**
 ```json
 {
-  "id": "textbox2",
-  "title": "Hardware Info",
-  "enabled": false,
-  "depends": {
-    "script_path": "/usr/bin/hardware-info.sh",
-    "display_title": "Hardware"
-  }
+  "id": "unique_instance_1",
+  "title": "Instance 1",
+  "type": "your_module_type",
+  "depends": { /* instance-specific config */ }
+},
+{
+  "id": "unique_instance_2",
+  "title": "Instance 2",
+  "type": "your_module_type",
+  "depends": { /* different config */ }
 }
 ```
 
 #### TextBoxScreen File Structure:
-- **Header**: `include/ScreenModules.h` - Class declaration
-- **Implementation**: `src/modules/TextBoxScreen.cpp` - Full implementation
+- **Header**: `include/ScreenModules.h` - Enhanced class with dynamic ID support
+- **Implementation**: `src/modules/TextBoxScreen.cpp` - Full implementation with refresh and anti-flicker
+- **Integration**: `src/MicroPanel.cpp` - Type-based instantiation logic
+- **Example Scripts**: `scripts/pi-cpu-temp.sh` - Reference implementation for refresh-capable scripts
 - **Registration**: `src/MicroPanel.cpp` - Module registration
 - **Build**: `CMakeLists.txt` - Source file inclusion
 - **Config**: `screens/*.json` - JSON configuration

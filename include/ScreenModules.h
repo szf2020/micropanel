@@ -103,15 +103,21 @@ public:
     void update() override;
     void exit() override;
     bool handleInput() override;
-    std::string getModuleId() const override { return "textbox"; }
+    std::string getModuleId() const override { return m_moduleId; }
 
     // GPIO support methods
     void handleGPIORotation(int direction);
     bool handleGPIOButtonPress();
 
+    // Dynamic ID support (like GenericListScreen)
+    void setId(const std::string& id);
+
 private:
     void executeAndDisplay();
     void updateContentOnly();
+    void updateChangedLinesOnly(const std::vector<std::string>& newLines);
+    void updateSingleLine(size_t lineIndex, const std::string& content, int yPosition);
+    std::string replaceUnicodeChars(const std::string& input);
     std::vector<std::string> executeScript();
     virtual std::string getScriptPath();
     virtual std::string getTitle();
@@ -120,6 +126,8 @@ private:
     bool m_shouldExit;
     double m_refreshSeconds;
     std::chrono::steady_clock::time_point m_lastExecutionTime;
+    std::string m_moduleId;
+    std::vector<std::string> m_previousContent;
 };
 
 /**

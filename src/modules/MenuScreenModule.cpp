@@ -241,10 +241,10 @@ void MenuScreenModule::executeSubmenuAction(const std::string& moduleId) {
     //module->run();
     // Run the module (with GPIO support if enabled)
     if (m_useGPIOMode && m_gpioHandler) {
-        std::cout << "MenuScreenModule: Using GPIO handler for module" << std::endl;
+        Logger::debug("MenuScreenModule: Using GPIO handler for module");
         m_gpioHandler(module);
     } else {
-        std::cout << "MenuScreenModule: Using traditional run() for module" << std::endl;
+        Logger::debug("MenuScreenModule: Using traditional run() for module");
         module->run();
     }
 
@@ -293,14 +293,14 @@ void MenuScreenModule::handleGPIORotation(int direction) {
 }
 
 bool MenuScreenModule::handleGPIOButtonPress() {
-    std::cout << "MenuScreenModule::handleGPIOButtonPress() called" << std::endl;
+    Logger::debug("MenuScreenModule::handleGPIOButtonPress() called");
 
     if (m_menu) {
-        std::cout << "Calling m_menu->handleButtonPress()" << std::endl;
+        Logger::debug("Calling m_menu->handleButtonPress()");
         m_menu->handleButtonPress();
 
-        std::cout << "After menu button press - exitToParent: " << m_exitToParent
-                  << ", exitToMainMenu: " << m_exitToMainMenu << std::endl;
+        Logger::debug("After menu button press - exitToParent: " + std::to_string(m_exitToParent) +
+                      ", exitToMainMenu: " + std::to_string(m_exitToMainMenu));
 
         // Check for exit conditions (same as the original handleInput logic)
         if (m_exitToParent) {
@@ -310,7 +310,7 @@ bool MenuScreenModule::handleGPIOButtonPress() {
                 m_parentMenu->m_exitToMainMenu = true;
                 m_parentMenu->m_exitToParent = true;
             }
-            std::cout << "MenuScreenModule should exit!" << std::endl;
+            Logger::debug("MenuScreenModule should exit!");
             return false; // Exit the module
         }
 

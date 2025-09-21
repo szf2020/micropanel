@@ -2,6 +2,7 @@
 
 #include "DeviceInterfaces.h"
 #include "Config.h"
+#include "Logger.h"
 #include <iostream>
 #include <cstring>
 #include <cerrno>
@@ -14,7 +15,7 @@
 I2CDisplayDevice::I2CDisplayDevice(const std::string& devicePath)
     : BaseDisplayDevice(devicePath) {
     std::memset(m_displayBuffer, 0, sizeof(m_displayBuffer));
-    std::cout << "I2CDisplayDevice created for: " << devicePath << std::endl;
+    Logger::debug("I2CDisplayDevice created for: " + devicePath);
 }
 
 I2CDisplayDevice::~I2CDisplayDevice() {
@@ -22,7 +23,7 @@ I2CDisplayDevice::~I2CDisplayDevice() {
 }
 
 bool I2CDisplayDevice::open() {
-    std::cout << "Opening I2C device: " << m_devicePath << std::endl;
+    Logger::debug("Opening I2C device: " + m_devicePath);
     
     // Open I2C device
     m_fd = ::open(m_devicePath.c_str(), O_RDWR);
@@ -39,7 +40,7 @@ bool I2CDisplayDevice::open() {
         return false;
     }
 
-    std::cout << "I2C device opened successfully, initializing display..." << std::endl;
+    Logger::debug("I2C device opened successfully, initializing display...");
 
     // Initialize the SSD1306 display
     if (!initializeDisplay()) {
@@ -161,7 +162,7 @@ bool I2CDisplayDevice::initializeDisplay() {
 }
 
 void I2CDisplayDevice::clear() {
-    std::cout << "I2CDisplayDevice::clear()" << std::endl;
+    Logger::debug("I2CDisplayDevice::clear()");
     
     // Clear framebuffer
     std::memset(m_displayBuffer, 0, sizeof(m_displayBuffer));
@@ -183,7 +184,7 @@ void I2CDisplayDevice::clear() {
 }
 
 void I2CDisplayDevice::drawText(int x, int y, const std::string& text) {
-    std::cout << "I2CDisplayDevice::drawText(" << x << "," << y << ",\"" << text << "\")" << std::endl;
+    Logger::debug("I2CDisplayDevice::drawText(" + std::to_string(x) + "," + std::to_string(y) + ",\"" + text + "\")");
     
     setCursor(x, y);
     
@@ -198,7 +199,7 @@ void I2CDisplayDevice::setCursor(int x, int y) {
 }
 
 void I2CDisplayDevice::setInverted(bool inverted) {
-    std::cout << "I2CDisplayDevice::setInverted(" << inverted << ")" << std::endl;
+    Logger::debug("I2CDisplayDevice::setInverted(" + std::string(inverted ? "true" : "false") + ")");
     
     m_inverted = inverted;
     
@@ -210,7 +211,7 @@ void I2CDisplayDevice::setInverted(bool inverted) {
 }
 
 void I2CDisplayDevice::setBrightness(int brightness) {
-    std::cout << "I2CDisplayDevice::setBrightness(" << brightness << ")" << std::endl;
+    Logger::debug("I2CDisplayDevice::setBrightness(" + std::to_string(brightness) + ")");
     
     // Clamp brightness to valid range
     uint8_t contrast = static_cast<uint8_t>(brightness > 255 ? 255 : (brightness < 0 ? 0 : brightness));
@@ -220,8 +221,8 @@ void I2CDisplayDevice::setBrightness(int brightness) {
 }
 
 void I2CDisplayDevice::drawProgressBar(int x, int y, int width, int height, int percentage) {
-    std::cout << "I2CDisplayDevice::drawProgressBar(" << x << "," << y << "," 
-              << width << "," << height << "," << percentage << "%)" << std::endl;
+    Logger::debug("I2CDisplayDevice::drawProgressBar(" + std::to_string(x) + "," + std::to_string(y) + "," +
+                  std::to_string(width) + "," + std::to_string(height) + "," + std::to_string(percentage) + "%)");
     
     // Ensure progress is within range
     if (percentage > 100) percentage = 100;
@@ -269,7 +270,7 @@ void I2CDisplayDevice::drawProgressBar(int x, int y, int width, int height, int 
 }
 
 void I2CDisplayDevice::setPower(bool on) {
-    std::cout << "I2CDisplayDevice::setPower(" << on << ")" << std::endl;
+    Logger::debug("I2CDisplayDevice::setPower(" + std::string(on ? "true" : "false") + ")");
     
     if (on) {
         writeCommand(SSD1306_DISPLAY_ON);

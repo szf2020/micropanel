@@ -980,9 +980,9 @@ void MicroPanel::runModuleWithGPIOInput(std::shared_ptr<ScreenModule> module) {
     }
 
     // Exit the module
-    std::cout << "Exiting module..." << std::endl;
+    Logger::debug("Exiting module...");
     module->exit();
-    std::cout << "Module exited successfully" << std::endl;
+    Logger::debug("Module exited successfully");
 }
 
 // NEW: Helper method to simulate rotation for different module types

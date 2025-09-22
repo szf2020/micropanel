@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "DeviceInterfaces.h"
 #include "ModuleDependency.h"
+#include "ScreenModules.h"
 #include <iostream>
 #include <unistd.h>
 
@@ -283,6 +284,69 @@ void MenuScreenModule::onScreenAction(const std::string& screenId,
         // Handle request to navigate to main menu from child screen
         Logger::debug("Child screen requested exit to main menu: " + screenId);
         navigateToMainMenu();
+    } else if (action == "launch_module") {
+        // Handle module launching request from GenericListScreen
+        Logger::debug("Module launch requested: " + value);
+        handleModuleLaunch(screenId, value);
+    }
+}
+
+void MenuScreenModule::handleModuleLaunch(const std::string& sourceModuleId, const std::string& value) {
+    Logger::debug("MenuScreenModule::handleModuleLaunch called from " + sourceModuleId + " with value: " + value);
+
+    // Parse the value: "textbox:eth0" -> moduleType="textbox", parameter="eth0"
+    size_t colonPos = value.find(':');
+    if (colonPos == std::string::npos) {
+        Logger::warning("Invalid module launch value format: " + value);
+        return;
+    }
+
+    std::string moduleType = value.substr(0, colonPos);
+    std::string parameter = value.substr(colonPos + 1);
+
+    Logger::debug("Module launch request - Type: " + moduleType + ", Parameter: " + parameter);
+
+    // For now, we'll handle textbox modules
+    if (moduleType == "textbox") {
+        // Create a new TextBoxScreen with runtime parameters
+        auto textboxModule = std::make_shared<TextBoxScreen>(m_display, m_input);
+
+        // Set up dynamic module ID
+        std::string dynamicId = parameter + "_dynamic_stats";
+        textboxModule->setId(dynamicId);
+
+        // Set runtime parameters for substitution
+        std::map<std::string, std::string> runtimeParams;
+        runtimeParams["INTERFACE"] = parameter;
+        textboxModule->setRuntimeParameters(runtimeParams);
+
+        // Add dependencies programmatically
+        auto& dependencies = ModuleDependency::getInstance();
+        // Get resolved script path from the dynamic_network_stats template module
+        std::string templateScriptPath = dependencies.getDependencyPath("dynamic_network_stats", "script_path");
+        std::string scriptPath;
+        if (!templateScriptPath.empty()) {
+            // Use the resolved path from the template
+            scriptPath = templateScriptPath;
+        } else {
+            // Fallback if template doesn't exist
+            scriptPath = "./scripts/network-data-info.sh --interface=$INTERFACE";
+        }
+        dependencies.addDependency(dynamicId, "script_path", scriptPath);
+        dependencies.addDependency(dynamicId, "refresh_sec", "2.0");
+        dependencies.addDependency(dynamicId, "display_title", "$INTERFACE Stats");
+
+        Logger::debug("Launching dynamic TextBoxScreen for interface: " + parameter);
+
+        // If we have a GPIO handler, use it to run the module
+        if (m_gpioHandler && m_useGPIOMode) {
+            m_gpioHandler(textboxModule);
+        } else {
+            // Fallback: run the module directly
+            textboxModule->run();
+        }
+    } else {
+        Logger::warning("Unsupported module type for launch: " + moduleType);
     }
 }
 

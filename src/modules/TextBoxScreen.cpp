@@ -11,6 +11,7 @@
 #include <memory>
 #include <chrono>
 #include <thread>
+#include <map>
 
 TextBoxScreen::TextBoxScreen(std::shared_ptr<Display> display, std::shared_ptr<InputDevice> input)
     : ScreenModule(display, input), m_shouldExit(false), m_refreshSeconds(0.0), m_moduleId("textbox")
@@ -140,9 +141,16 @@ void TextBoxScreen::executeAndDisplay()
             line = line.substr(0, 16);
         }
 
-        // Center the text
+        // Center the text and create a 16-character padded string (same as updateSingleLine)
         int textPos = std::max(0, (16 - static_cast<int>(line.length())) / 2);
-        m_display->drawText(textPos, yPositions[i], line);
+        std::string paddedLine(16, ' '); // Create 16-space string filled with spaces
+        // Copy the line into the centered position
+        for (size_t j = 0; j < line.length(); ++j) {
+            if (textPos + j < 16) {
+                paddedLine[textPos + j] = line[j];
+            }
+        }
+        m_display->drawText(0, yPositions[i], paddedLine);
         usleep(Config::DISPLAY_CMD_DELAY);
     }
 
@@ -287,6 +295,9 @@ std::string TextBoxScreen::getScriptPath()
         return "/usr/bin/micropanel-version.sh";  // fallback default
     }
 
+    // Apply runtime parameter substitution
+    scriptPath = substituteParameters(scriptPath);
+
     Logger::debug("TextBoxScreen: Using script path: " + scriptPath);
     return scriptPath;
 }
@@ -300,6 +311,9 @@ std::string TextBoxScreen::getTitle()
         Logger::debug("No display_title dependency found for " + m_moduleId + ", using default");
         return "Info";  // fallback default
     }
+
+    // Apply runtime parameter substitution
+    title = substituteParameters(title);
 
     return title;
 }
@@ -344,6 +358,16 @@ void TextBoxScreen::setId(const std::string& id) {
     Logger::debug("TextBoxScreen: Set dynamic ID to: " + id);
 }
 
+void TextBoxScreen::setRuntimeParameters(const std::map<std::string, std::string>& params) {
+    m_runtimeParams = params;
+    Logger::debug("TextBoxScreen (" + m_moduleId + "): Set " + std::to_string(params.size()) + " runtime parameters");
+
+    // Debug: Log all parameters
+    for (const auto& param : params) {
+        Logger::debug("  " + param.first + " = " + param.second);
+    }
+}
+
 std::string TextBoxScreen::replaceUnicodeChars(const std::string& input) {
     std::string result = input;
 
@@ -361,6 +385,25 @@ std::string TextBoxScreen::replaceUnicodeChars(const std::string& input) {
     //     result.replace(pos, 2, "u");
     //     pos += 1;
     // }
+
+    return result;
+}
+
+std::string TextBoxScreen::substituteParameters(const std::string& input) {
+    std::string result = input;
+
+    // Replace all $PARAMETER placeholders with runtime parameter values
+    for (const auto& param : m_runtimeParams) {
+        std::string placeholder = "$" + param.first;
+        size_t pos = 0;
+
+        while ((pos = result.find(placeholder, pos)) != std::string::npos) {
+            result.replace(pos, placeholder.length(), param.second);
+            pos += param.second.length();
+
+            Logger::debug("TextBoxScreen: Substituted " + placeholder + " → " + param.second);
+        }
+    }
 
     return result;
 }

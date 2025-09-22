@@ -40,6 +40,7 @@ public:
     bool handleGPIOButtonPress();
     void setGPIOHandler(std::function<void(std::shared_ptr<ScreenModule>)> gpioHandler);
     void setUseGPIOMode(bool useGPIO) { m_useGPIOMode = useGPIO; }
+    void handleModuleLaunch(const std::string& sourceModuleId, const std::string& value);
 
 private:
     struct SubmenuItem {

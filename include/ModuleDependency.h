@@ -34,6 +34,9 @@ public:
     
     // Special flag to skip dependency checks for menus
     bool shouldSkipDependencyCheck(const std::string& moduleId);
+
+    // Add dependency programmatically for dynamic modules
+    void addDependency(const std::string& moduleId, const std::string& dependencyKey, const std::string& dependencyPath);
 private:
     // Private constructor for singleton
     ModuleDependency();

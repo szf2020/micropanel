@@ -273,6 +273,19 @@ bool GenericListScreen::handleInput()
 
 void GenericListScreen::renderList()
 {
+    Logger::debug("GenericListScreen::renderList() called for: " + m_id);
+    // Clear lines 0 and 8 to ensure clean title and separator redraw
+    m_display->drawText(0, 0, "                "); // Clear title line
+    usleep(Config::DISPLAY_CMD_DELAY);
+    m_display->drawText(0, 8, "                "); // Clear separator line
+    usleep(Config::DISPLAY_CMD_DELAY);
+
+    // Always redraw title and separator to ensure they're visible after returning from sub-modules
+    m_display->drawText(0, 0, m_title);
+    usleep(Config::DISPLAY_CMD_DELAY);
+    m_display->drawText(0, 8, "----------------");
+    usleep(Config::DISPLAY_CMD_DELAY);
+
     // If in state mode, run the selection script first
     if (m_stateMode && !m_selectionScript.empty()) {
         // Execute the script to get the current state
@@ -352,13 +365,43 @@ void GenericListScreen::executeAction(const std::string& actionTemplate)
         action.replace(paramPos, 2, m_items[m_selectedIndex].title);
     }
 
-    // Execute the command
-    std::string result = executeCommand(action);
-    Logger::debug("GenericListScreen '" + m_id + "' executed action: " + action);
-    Logger::debug("Executed action: " + action);
-    // If in state mode, redraw the screen to show updated state
-    if (m_stateMode) {
-        renderList();
+    // Check if this is a module launch action
+    if (action.find("launch_module:") == 0) {
+        // Handle module launching
+        std::string moduleType = action.substr(14); // Remove "launch_module:" prefix
+        std::string selectedValue = m_items[m_selectedIndex].title;
+
+        Logger::debug("GenericListScreen '" + m_id + "' launching module: " + moduleType + " with parameter: " + selectedValue);
+
+        // Launch the module with the selected value as parameter
+        launchModule(moduleType, selectedValue);
+    } else {
+        // Traditional shell command execution (existing functionality)
+        std::string result = executeCommand(action);
+        Logger::debug("GenericListScreen '" + m_id + "' executed action: " + action);
+        Logger::debug("Executed action: " + action);
+
+        // If in state mode, redraw the screen to show updated state
+        if (m_stateMode) {
+            renderList();
+        }
+    }
+}
+
+void GenericListScreen::launchModule(const std::string& moduleType, const std::string& parameter)
+{
+    Logger::debug("GenericListScreen::launchModule - Type: " + moduleType + ", Parameter: " + parameter);
+
+    // Use the callback system to request module launch from parent
+    if (m_callback) {
+        // Format: "launch_module:textbox:eth0"
+        std::string action = "launch_module";
+        std::string value = moduleType + ":" + parameter;
+
+        Logger::debug("GenericListScreen: Notifying callback to launch module");
+        m_callback->onScreenAction(m_id, action, value);
+    } else {
+        Logger::warning("GenericListScreen: No callback set - cannot launch module");
     }
 }
 

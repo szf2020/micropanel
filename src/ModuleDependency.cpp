@@ -137,3 +137,8 @@ bool ModuleDependency::shouldSkipDependencyCheck(const std::string& moduleId) {
     // Skip dependency checks for menu modules
     return moduleId.find("_menu") != std::string::npos;
 }
+
+void ModuleDependency::addDependency(const std::string& moduleId, const std::string& dependencyKey, const std::string& dependencyPath) {
+    m_dependencies[moduleId][dependencyKey] = dependencyPath;
+    Logger::debug("Added dynamic dependency for " + moduleId + ": " + dependencyKey + " -> " + dependencyPath);
+}

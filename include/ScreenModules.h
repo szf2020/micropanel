@@ -112,12 +112,16 @@ public:
     // Dynamic ID support (like GenericListScreen)
     void setId(const std::string& id);
 
+    // Runtime parameter support for dynamic configuration
+    void setRuntimeParameters(const std::map<std::string, std::string>& params);
+
 private:
     void executeAndDisplay();
     void updateContentOnly();
     void updateChangedLinesOnly(const std::vector<std::string>& newLines);
     void updateSingleLine(size_t lineIndex, const std::string& content, int yPosition);
     std::string replaceUnicodeChars(const std::string& input);
+    std::string substituteParameters(const std::string& input);
     std::vector<std::string> executeScript();
     virtual std::string getScriptPath();
     virtual std::string getTitle();
@@ -128,6 +132,7 @@ private:
     std::chrono::steady_clock::time_point m_lastExecutionTime;
     std::string m_moduleId;
     std::vector<std::string> m_previousContent;
+    std::map<std::string, std::string> m_runtimeParams;
 };
 
 /**
@@ -636,6 +641,7 @@ private:
     void renderList();
     void executeAction(const std::string& action);
     std::string executeCommand(const std::string& command) const;
+    void launchModule(const std::string& moduleType, const std::string& parameter);
     // Configuration
     std::string m_id = "genericlist";
     std::string m_title = "Generic List";

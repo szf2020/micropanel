@@ -44,6 +44,7 @@
       "type": "menu",
       "submenus": [
         {"id": "netinfo", "title": "Interfaces"},
+        {"id": "net_stats", "title": "Stats"},
         {"id": "back", "title": "Back"}
       ]
     },
@@ -192,6 +193,28 @@
         "default_bandwidth": "0",
         "default_parallel": "1",
         "default_server_ip": "192.168.1.1"
+      }
+    },
+    {
+      "id": "net_stats",
+      "title": "Network Stats",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {"title": "Back"}
+      ],
+      "items_source": "$MICROPANEL_HOME/scripts/network-interfaces-list.sh",
+      "items_action": "launch_module:textbox"
+    },
+    {
+      "id": "dynamic_network_stats",
+      "title": "Network Stats",
+      "enabled": false,
+      "type": "textbox",
+      "depends": {
+        "script_path": "$MICROPANEL_HOME/scripts/network-data-info.sh --interface=$INTERFACE",
+        "refresh_sec": "2.0",
+        "display_title": "$INTERFACE Stats"
       }
     }
   ],

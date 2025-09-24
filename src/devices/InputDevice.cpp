@@ -1,5 +1,6 @@
 #include "DeviceInterfaces.h"
 #include "Config.h"
+#include "Logger.h"
 #include <cstring>
 #include <cerrno>
 #include <iostream>
@@ -182,10 +183,15 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
 
     // Read and coalesce events
     ssize_t bytesRead;
+    if (Logger::isVerbose()) {
+        Logger::debug("Starting processEvents - device fd=" + std::to_string(m_fd));
+    }
     while ((bytesRead = read(m_fd, &ev, sizeof(ev))) > 0 && eventCount < Config::MAX_EVENTS_PER_ITERATION) {
-        //std::cout << "Input event received: type=" << ev.type
-        //          << " code=" << ev.code
-        //          << " value=" << ev.value << std::endl;
+        if (Logger::isVerbose()) {
+            Logger::debug("Input event received: type=" + std::to_string(ev.type) +
+                         " code=" + std::to_string(ev.code) +
+                         " value=" + std::to_string(ev.value));
+        }
 
         // Handle SYN_REPORT events (type 0)
         if (ev.type == 0) {
@@ -197,7 +203,9 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
             // Handle BTN_LEFT (RP2040 enter button) - EXISTING FUNCTIONALITY
             if (ev.code == BTN_LEFT && ev.value == 1) {
                 // Mouse left button press (value 1 = pressed) - EXISTING
-                std::cout << "BTN_LEFT press detected (RP2040 enter button)" << std::endl;
+                if (Logger::isVerbose()) {
+                    Logger::debug("BTN_LEFT press detected (RP2040 enter button)");
+                }
                 btnPress = 1;
                 eventCount++;
             }
@@ -207,7 +215,9 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
 
                 switch (ev.code) {
                     case KEY_LEFT: // 105
-                        std::cout << "KEY_LEFT press detected - sending single REL_X event" << std::endl;
+                        if (Logger::isVerbose()) {
+                            Logger::debug("KEY_LEFT press detected - sending single REL_X event");
+                        }
                         // Send single event immediately (no dual events for keyboard)
                         if (onRotation) {
                             onRotation(-5);
@@ -216,7 +226,9 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
                         break;
 
                     case KEY_RIGHT: // 106
-                        std::cout << "KEY_RIGHT press detected - sending single REL_X event" << std::endl;
+                        if (Logger::isVerbose()) {
+                            Logger::debug("KEY_RIGHT press detected - sending single REL_X event");
+                        }
                         // Send single event immediately (no dual events for keyboard)
                         if (onRotation) {
                             onRotation(5);
@@ -225,7 +237,9 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
                         break;
 
                     case KEY_UP: // 103
-                        std::cout << "KEY_UP press detected - sending single REL_Y event" << std::endl;
+                        if (Logger::isVerbose()) {
+                            Logger::debug("KEY_UP press detected - sending single REL_Y event");
+                        }
                         // Send single event immediately (no dual events for keyboard)
                         if (onRotation) {
                             onRotation(-5);  // UP moves menu selection up
@@ -234,7 +248,9 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
                         break;
 
                     case KEY_DOWN: // 108
-                        std::cout << "KEY_DOWN press detected - sending single REL_Y event" << std::endl;
+                        if (Logger::isVerbose()) {
+                            Logger::debug("KEY_DOWN press detected - sending single REL_Y event");
+                        }
                         // Send single event immediately (no dual events for keyboard)
                         if (onRotation) {
                             onRotation(5);   // DOWN moves menu selection down
@@ -243,7 +259,9 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
                         break;
 
                     case KEY_ENTER: // 28
-                        std::cout << "KEY_ENTER press detected" << std::endl;
+                        if (Logger::isVerbose()) {
+                            Logger::debug("KEY_ENTER press detected");
+                        }
                         btnPress = 1;
                         eventCount++;
                         break;
@@ -335,14 +353,24 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
 
     if (bytesRead < 0) {
         if (errno != EAGAIN) {
-            ;//std::cerr << "Error reading from input device: " << strerror(errno) << std::endl;
+            if (Logger::isVerbose()) {
+                Logger::debug("Error reading from input device: " + std::string(strerror(errno)));
+            }
+        } else if (Logger::isVerbose()) {
+            Logger::debug("No events available (EAGAIN)");
         }
+    } else if (bytesRead == 0 && Logger::isVerbose()) {
+        Logger::debug("No bytes read (EOF)");
     }
 
     // Process button press if detected
     if (btnPress && onButtonPress) {
-        //std::cout << "Calling button press callback" << std::endl;
+        if (Logger::isVerbose()) {
+            Logger::debug("Calling button press callback");
+        }
         onButtonPress();
+    } else if (btnPress && !onButtonPress && Logger::isVerbose()) {
+        Logger::debug("Button press detected but no callback provided");
     }
 
     // EXISTING: Handle relative movement processing
@@ -357,14 +385,18 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
         (m_state.pairedEventCount >= 2 || timeSinceLastMs > Config::EVENT_PROCESS_THRESHOLD)) {
         // Process horizontal movement (REL_X)
         if (m_state.totalRelX != 0 && onRotation) {
-            //std::cout << "Calling rotation callback with value: " << m_state.totalRelX << std::endl;
+            if (Logger::isVerbose()) {
+                Logger::debug("Calling rotation callback with REL_X value: " + std::to_string(m_state.totalRelX));
+            }
             onRotation(m_state.totalRelX);
         }
 
         // Process vertical movement (REL_Y)
         // For vertical movement, we invert the value as up should be positive (REL_Y is negative for up)
         if (m_state.totalRelY != 0 && onRotation) {
-            //std::cout << "Calling rotation callback with value: " << -m_state.totalRelY << std::endl;
+            if (Logger::isVerbose()) {
+                Logger::debug("Calling rotation callback with REL_Y value: " + std::to_string(-m_state.totalRelY));
+            }
             // Invert Y value for more intuitive direction (negative is down, positive is up)
             onRotation(-m_state.totalRelY);
         }
@@ -383,5 +415,8 @@ bool InputDevice::processEvents(std::function<void(int)> onRotation, std::functi
         }
     }
 
+    if (Logger::isVerbose()) {
+        Logger::debug("processEvents returning with eventCount=" + std::to_string(eventCount));
+    }
     return eventCount > 0;
 }

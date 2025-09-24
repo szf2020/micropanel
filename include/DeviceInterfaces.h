@@ -244,6 +244,7 @@ public:
 
     // Device detection functions
     std::pair<std::string, std::string> detectDevices();
+    std::pair<std::string, std::string> detectDevicesWithFallback(const std::string& fallbackInput, const std::string& fallbackSerial);
     bool checkDevicePresent() const;
     bool monitorDeviceUntilConnected(std::atomic<bool>& runningFlag);
 

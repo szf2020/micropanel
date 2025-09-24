@@ -66,12 +66,9 @@ void MicroPanel::parseCommandLine(int argc, char* argv[])
                 m_config.inputDevice = optarg;
                 if (std::string(optarg) == "gpio") {
                     m_config.useGPIOMode = true;
-                    m_config.autoDetect = false;
                     Logger::info("GPIO multi-device mode enabled");
-                } else {
-                    m_config.autoDetect = false;  // Disable auto-detect when specific device is provided
                 }
-		//m_config.autoDetect = false;  // Disable auto-detect when specific device is provided
+                // Note: Don't disable auto-detect here - let -a flag control it for hybrid mode
                 break;
             case 's':
                 m_config.serialDevice = optarg;
@@ -150,34 +147,54 @@ bool MicroPanel::initialize()
     // Initialize device manager
     m_deviceManager = std::make_shared<DeviceManager>();
 
-    // If auto-detect is enabled, wait for device to be connected
+    // If auto-detect is enabled, try device detection with optional fallback
     if (m_config.autoDetect) {
-        std::cout << "Waiting for HMI device to be connected..." << std::endl;
+        std::pair<std::string, std::string> devices;
 
-        // First check if the device is already connected
-        auto devices = m_deviceManager->detectDevices();
-        if (devices.first.empty() || devices.second.empty()) {
-            // Device not connected, wait for it
-            std::cout << "HMI device not found. Waiting for connection..." << std::endl;
+        // Check if fallback devices were provided via command line
+        bool hasFallbackDevices = !m_config.inputDevice.empty() && !m_config.serialDevice.empty();
 
-            if (!m_deviceManager->monitorDeviceUntilConnected(m_running)) {
-                std::cerr << "Gave up waiting for device" << std::endl;
-                return false;
+        if (hasFallbackDevices) {
+            // Hybrid mode: Try USB first, fallback to provided devices
+            std::cout << "Hybrid detection mode: USB HID priority with GPIO/I2C fallback..." << std::endl;
+            devices = m_deviceManager->detectDevicesWithFallback(m_config.inputDevice, m_config.serialDevice);
+        } else {
+            // Pure auto-detect mode: Wait for USB HID device
+            std::cout << "Waiting for HMI device to be connected..." << std::endl;
+
+            // First check if the device is already connected
+            devices = m_deviceManager->detectDevices();
+            if (devices.first.empty() || devices.second.empty()) {
+                // Device not connected, wait for it
+                std::cout << "HMI device not found. Waiting for connection..." << std::endl;
+
+                if (!m_deviceManager->monitorDeviceUntilConnected(m_running)) {
+                    std::cerr << "Gave up waiting for device" << std::endl;
+                    return false;
+                }
+
+                // Try again after device is connected
+                devices = m_deviceManager->detectDevices();
             }
 
-            // Try again after device is connected
-            devices = m_deviceManager->detectDevices();
+            if (devices.first.empty() || devices.second.empty()) {
+                std::cerr << "Failed to auto-detect devices" << std::endl;
+                return false;
+            }
         }
 
-        if (!devices.first.empty() && !devices.second.empty()) {
-            m_config.inputDevice = devices.first;
-            m_config.serialDevice = devices.second;
-            std::cout << "Auto-detected input device: " << m_config.inputDevice << std::endl;
-            std::cout << "Auto-detected serial device: " << m_config.serialDevice << std::endl;
-        } else {
-            std::cerr << "Failed to auto-detect devices" << std::endl;
-            return false;
+        // Update config with detected/fallback devices
+        m_config.inputDevice = devices.first;
+        m_config.serialDevice = devices.second;
+
+        // IMPORTANT: If we detected a real USB input device (not GPIO fallback), disable GPIO mode
+        if (devices.first != "gpio" && devices.first.find("/dev/input/event") == 0) {
+            m_config.useGPIOMode = false;
+            std::cout << "USB input device detected, disabling GPIO mode" << std::endl;
         }
+
+        std::cout << "Using input device: " << m_config.inputDevice << std::endl;
+        std::cout << "Using serial device: " << m_config.serialDevice << std::endl;
     }
 
 
@@ -195,7 +212,25 @@ bool MicroPanel::initialize()
     m_baseDisplayDevice = createDisplayDevice(m_config.serialDevice);
 
     // NEW: Handle GPIO mode vs traditional mode
+    // Use GPIO only if explicitly requested AND no USB device was detected
+    bool shouldUseGPIO = false;
+
     if (m_config.useGPIOMode) {
+        // GPIO mode was requested, but check if we detected a USB device instead
+        if (m_config.inputDevice == "gpio" || m_config.inputDevice.find("/dev/input/event") != 0) {
+            // No USB device detected, use GPIO
+            shouldUseGPIO = true;
+        } else {
+            // USB device detected, ignore GPIO request and use USB
+            shouldUseGPIO = false;
+            std::cout << "USB device detected, overriding GPIO mode request" << std::endl;
+        }
+    }
+
+    Logger::info("Input mode decision: shouldUseGPIO=" + std::string(shouldUseGPIO ? "true" : "false") +
+                 ", inputDevice='" + m_config.inputDevice + "', useGPIOMode=" + std::string(m_config.useGPIOMode ? "true" : "false"));
+
+    if (shouldUseGPIO) {
     std::cout << "Initializing GPIO multi-device mode..." << std::endl;
 
     // Create MultiInputDevice for GPIO buttons

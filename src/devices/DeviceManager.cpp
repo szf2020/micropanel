@@ -31,6 +31,32 @@ std::pair<std::string, std::string> DeviceManager::detectDevices()
     return std::make_pair(inputDevice, serialDevice);
 }
 
+std::pair<std::string, std::string> DeviceManager::detectDevicesWithFallback(const std::string& fallbackInput, const std::string& fallbackSerial)
+{
+    Logger::info("Trying USB HID device detection first...");
+
+    // First attempt: Try USB HID detection
+    std::pair<std::string, std::string> usbDevices = detectDevices();
+
+    Logger::info("USB detection results:");
+    Logger::info("  Input device: '" + usbDevices.first + "' (empty=" + (usbDevices.first.empty() ? "true" : "false") + ")");
+    Logger::info("  Serial device: '" + usbDevices.second + "' (empty=" + (usbDevices.second.empty() ? "true" : "false") + ")");
+
+    if (!usbDevices.first.empty() && !usbDevices.second.empty()) {
+        Logger::info("USB HID device detected successfully!");
+        Logger::info("  Input device: " + usbDevices.first);
+        Logger::info("  Serial device: " + usbDevices.second);
+        return usbDevices;
+    }
+
+    // Fallback: Use provided GPIO/I2C devices
+    Logger::info("USB HID device not found, falling back to GPIO/I2C mode...");
+    Logger::info("  Using fallback input: " + fallbackInput);
+    Logger::info("  Using fallback serial: " + fallbackSerial);
+
+    return std::make_pair(fallbackInput, fallbackSerial);
+}
+
 bool DeviceManager::checkDevicePresent() const
 {
     struct udev* udev;
@@ -469,12 +495,12 @@ std::string DeviceManager::findHmiInputDevice() const
         // Check the device name
         const char* name = udev_device_get_property_value(dev, "NAME");
         if (name) {
-            Logger::debug("Found input device: " + std::string(devnode) + " - Name: " + std::string(name));
-            
+            Logger::info("Checking input device: " + std::string(devnode) + " - Name: " + std::string(name));
+
             // Check if this device's name matches our product
-            if (strstr(name, Config::HMI_PRODUCT_NAME) != NULL || 
+            if (strstr(name, Config::HMI_PRODUCT_NAME) != NULL ||
                 strstr(name, "Pico Encoder") != NULL) {
-                Logger::debug("Found matching input device by name: " + std::string(devnode));
+                Logger::info("FOUND MATCHING INPUT DEVICE BY NAME: " + std::string(devnode));
                 result = devnode;
                 udev_device_unref(dev);
                 break;
@@ -515,8 +541,8 @@ std::string DeviceManager::findHmiInputDevice() const
             if (vendor && product &&
                 strcmp(vendor, Config::HMI_VENDOR_ID) == 0 &&
                 strcmp(product, Config::HMI_PRODUCT_ID) == 0) {
-                
-                Logger::debug("Found matching input device by VID:PID: " + std::string(devnode));
+
+                Logger::info("FOUND MATCHING INPUT DEVICE BY VID:PID: " + std::string(devnode) + " (VID:" + std::string(vendor) + " PID:" + std::string(product) + ")");
                 result = devnode;
                 udev_device_unref(dev);
                 break;

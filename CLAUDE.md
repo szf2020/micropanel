@@ -53,6 +53,8 @@ The codebase follows a modular architecture with clear separation of concerns:
 - **I2C Support**: Direct I2C communication for Raspberry Pi deployments (`/dev/i2c-1`, `/dev/i2c-3`)
 - **GPIO Mode**: Alternative input handling using GPIO buttons for Raspberry Pi (`-i gpio`)
 - **Auto-Detection**: Automatic USB device detection and reconnection (enabled by default)
+- **USB Dongle Priority**: When using `-a` with `-i gpio -s /dev/i2c-X`, system automatically prioritizes USB HID dongle if detected, falls back to GPIO/I2C if not found
+- **Hybrid Detection**: Smart device selection that tries USB first, then falls back to specified GPIO/I2C devices seamlessly
 
 ### Serial Command Protocol
 Core display commands sent to `/dev/ttyACM0`:
@@ -108,6 +110,10 @@ make && sudo make install
 cmake -DINSTALL_SYSTEMD_SERVICE=ON -DSYSTEMD_UNITFILE_ARGS="-i gpio -s /dev/i2c-3" ..
 make && sudo make install
 
+# Installation with hybrid USB/GPIO detection (RECOMMENDED for Pi)
+cmake -DINSTALL_SYSTEMD_SERVICE=ON -DSYSTEMD_UNITFILE_ARGS="-a -i gpio -s /dev/i2c-3" ..
+make && sudo make install
+
 # Install all configuration files
 cmake -DINSTALL_ALL_CONFIGS=ON ..
 make && sudo make install
@@ -128,8 +134,21 @@ make && sudo make install
 - Use verbose mode: `./build/micropanel -v -c screens/config-debian.json`
 - Test GPIO mode (Pi): `./build/micropanel -i gpio -s /dev/i2c-1 -c screens/config-pios.json -v`
 - Test auto-detection: `./build/micropanel -a -c screens/config-debian.json -v`
+- Test hybrid detection: `./build/micropanel -a -i gpio -s /dev/i2c-3 -c screens/config-pios.json -v`
 - Check systemd service: `systemctl status micropanel`
 - Monitor logs: `tail -f /tmp/micropanel.log`
+
+**USB Dongle Auto-Detection System:**
+The system supports intelligent device detection with USB HID dongle priority:
+
+- **Pure USB Mode**: `./micropanel -a` - Waits for USB HID dongle connection
+- **Pure GPIO Mode**: `./micropanel -i gpio -s /dev/i2c-1` - Uses only GPIO buttons and I2C display
+- **Hybrid Mode**: `./micropanel -a -i gpio -s /dev/i2c-3` - **RECOMMENDED** for Raspberry Pi deployments
+  - Tries USB HID dongle detection first (VID:1209 PID:0001)
+  - If USB dongle found: Uses USB input (`/dev/input/eventX`) and display (`/dev/ttyACM0`)
+  - If USB dongle not found: Falls back to GPIO buttons and I2C display
+  - Automatic input mode switching with proper cleanup and exclusive access
+  - Debug logging available with `-v` flag for troubleshooting
 
 **Common Development Tasks:**
 - Modify screen modules in `src/modules/` for new functionality
@@ -149,7 +168,18 @@ When creating new interactive screen modules that need GPIO input support:
 
 ## Recent Development History
 
-### TextBoxScreen Periodic Refresh & Multiple Instances (Latest)
+### USB HID Dongle Priority & Hybrid Detection System (Latest)
+- **Intelligent Device Detection**: Implemented hybrid detection mode with USB HID dongle priority and GPIO/I2C fallback
+- **Command Line Integration**: Added support for `-a -i gpio -s /dev/i2c-X` to enable USB-first detection with seamless fallback
+- **Input Mode Auto-Switching**: System automatically disables GPIO mode when USB dongle is detected, prevents device conflicts
+- **Enhanced DeviceManager**: Added `detectDevicesWithFallback()` method for smart device selection based on availability
+- **Exclusive Device Access**: USB input devices get exclusive access with proper cleanup and reconnection handling
+- **Production Ready**: Recommended systemd service configuration for Raspberry Pi deployments with reliable operation
+- **Debug System Enhancement**: All debug messages converted to verbose-only mode using existing Logger system
+- **VID:PID Detection**: Specifically targets µPanel USB dongle (VID:1209 PID:0001) for precise device identification
+- **Zero Configuration**: Works out-of-the-box - plug in USB dongle and it automatically takes priority over GPIO
+
+### TextBoxScreen Periodic Refresh & Multiple Instances
 - **Periodic Script Execution**: Added `refresh_sec` configuration for auto-refreshing script output at configurable intervals (0.5s to 5s+)
 - **Anti-Flicker Updates**: Implemented selective line updates that only refresh changed content, eliminating display artifacts
 - **Multiple Instance Support**: Extended TextBoxScreen to support multiple instances using `"type": "textbox"` pattern (following GenericListScreen approach)
@@ -578,8 +608,11 @@ if (selectedIndex < firstVisibleItem) {
 
 **Configuration Examples:**
 ```bash
-# Raspberry Pi with GPIO and I2C display
+# Raspberry Pi with GPIO and I2C display (pure GPIO mode)
 ./micropanel -i gpio -s /dev/i2c-1 -c screens/config-pios.json
+
+# Hybrid mode: USB dongle priority with GPIO/I2C fallback (RECOMMENDED for Pi)
+./micropanel -a -i gpio -s /dev/i2c-3 -c screens/config-pios.json
 
 # Standard USB setup with auto-detection
 ./micropanel -c screens/config-debian.json

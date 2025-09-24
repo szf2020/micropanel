@@ -164,7 +164,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/bin/sh -c '$BINARY_PATH $PIOS_ARGS -c $CONFIG_FILE >/tmp/micropanel.log 2>&1'
+ExecStart=/bin/sh -c '$BINARY_PATH $PIOS_ARGS -a -c $CONFIG_FILE >/tmp/micropanel.log 2>&1'
 Restart=on-failure
 RestartSec=5
 

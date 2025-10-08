@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/bin/sh -c '/home/pi/micropanel/build/micropanel -a -c /home/pi/micropanel/screens/nested-persist-pi.json >/tmp/micropanel.log 2>&1'
+ExecStart=/bin/sh -c 'I2C_BUS=$$(/usr/bin/micropanel-detect-i2c.sh); /bin/micropanel -a -i gpio -s "$$I2C_BUS" -c /etc/micropanel/config.json >/tmp/micropanel.log 2>&1'
 Restart=on-failure
 RestartSec=5
 

@@ -168,6 +168,7 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/play-image.sh
         scripts/stop-image.sh
         scripts/micropanel-version.sh
+        scripts/micropanel-detect-i2c.sh
         DESTINATION usr/bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     )

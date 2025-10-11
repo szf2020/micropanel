@@ -7,7 +7,7 @@ DEFAULT_BUS="/dev/i2c-3"
 # Check if running on Raspberry Pi
 if grep -q "Raspberry Pi" /proc/cpuinfo 2>/dev/null; then
     # Try to detect SSD1306 at 0x3C on i2c-1 or i2c-3
-    for bus in /dev/i2c-1 /dev/i2c-3; do
+    for bus in /dev/i2c-1 /dev/i2c-2 /dev/i2c-3; do
         if [ -e "$bus" ]; then
             bus_num=$(echo "$bus" | sed 's|/dev/i2c-||')
             # Use i2cdetect to scan for device at 0x3C

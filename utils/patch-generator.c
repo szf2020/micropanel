@@ -276,7 +276,8 @@ void read_current_color(struct fb_var_screeninfo* vinfo, struct fb_fix_screeninf
 
 // Detect if we're running in SSH
 int is_ssh_session() {
-    char *ssh_env = getenv("SSH_CLIENT") || getenv("SSH_TTY");
+    //char *ssh_env = getenv("SSH_CLIENT") || getenv("SSH_TTY");
+    char *ssh_env = getenv("SSH_CLIENT") ? getenv("SSH_CLIENT") : getenv("SSH_TTY");
     if (ssh_env != NULL) return 1;
     
     // Check if we're in a pseudo-terminal

@@ -169,18 +169,19 @@ bool GenericListScreen::handleInput()
        return false;
     }
 
-    // Handle async completion states - only accept input when waiting for user
+    // Handle async completion states - ANY input (rotation or button) should dismiss the message
     if (m_asyncWaitingForUser && (m_asyncState == AsyncState::COMPLETED ||
                                   m_asyncState == AsyncState::FAILED ||
                                   m_asyncState == AsyncState::TIMEOUT)) {
         if (m_input->waitForEvents(100) > 0) {
-            bool buttonPressed = false;
+            bool inputReceived = false;
             m_input->processEvents(
-                [](int) {}, // Ignore rotation
-                [&]() { buttonPressed = true; }
+                [&](int) { inputReceived = true; }, // Rotation also dismisses message
+                [&]() { inputReceived = true; }      // Button press dismisses message
             );
 
-            if (buttonPressed) {
+            if (inputReceived) {
+                Logger::debug("Async completion message dismissed by user input");
                 // Return to normal list view
                 m_asyncState = AsyncState::IDLE;
                 m_asyncWaitingForUser = false;
@@ -821,6 +822,25 @@ int GenericListScreen::parseProgressFromLog()
 void GenericListScreen::handleGPIORotation(int direction) {
     Logger::debug("GenericListScreen GPIO rotation: " + std::to_string(direction));
 
+    // Handle async completion states - rotation should also dismiss the completion message
+    if (m_asyncWaitingForUser && (m_asyncState == AsyncState::COMPLETED ||
+                                  m_asyncState == AsyncState::FAILED ||
+                                  m_asyncState == AsyncState::TIMEOUT)) {
+        Logger::debug("Async process completed, rotation dismissing message and returning to list view");
+        // Return to normal list view (same as button press behavior)
+        m_asyncState = AsyncState::IDLE;
+        m_asyncWaitingForUser = false;
+        m_display->updateActivityTimestamp();
+        enter(); // Redraw the list
+        return; // Don't process the rotation as navigation
+    }
+
+    // Don't handle rotation during async process (while it's running)
+    if (m_asyncState == AsyncState::RUNNING) {
+        Logger::debug("Ignoring rotation - async process is running");
+        return;
+    }
+
     // Use the same navigation logic as handleInput()
     int oldSelection = m_selectedIndex;
 
@@ -853,6 +873,26 @@ void GenericListScreen::handleGPIORotation(int direction) {
 
 bool GenericListScreen::handleGPIOButtonPress() {
     Logger::debug("GenericListScreen GPIO button press - selecting item");
+
+    // Handle async completion states - only accept input when waiting for user
+    // This prevents the "press any button to continue" from triggering menu selection
+    if (m_asyncWaitingForUser && (m_asyncState == AsyncState::COMPLETED ||
+                                  m_asyncState == AsyncState::FAILED ||
+                                  m_asyncState == AsyncState::TIMEOUT)) {
+        Logger::debug("Async process completed, returning to list view");
+        // Return to normal list view
+        m_asyncState = AsyncState::IDLE;
+        m_asyncWaitingForUser = false;
+        m_display->updateActivityTimestamp();
+        enter(); // Redraw the list
+        return true; // Stay in the module, don't exit
+    }
+
+    // Don't process button presses during async process
+    if (m_asyncState == AsyncState::RUNNING) {
+        Logger::debug("Ignoring button press - async process is running");
+        return true;
+    }
 
     // Use the same selection logic as handleInput()
     if (m_selectedIndex >= 0 && m_selectedIndex < static_cast<int>(m_items.size())) {

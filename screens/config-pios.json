@@ -67,8 +67,16 @@
       "type": "GenericList",
       "list_items": [
     {
+      "title": "12-3-inch",
+      "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+      "async": true,
+      "timeout": 350,
+      "log_file": "/tmp/fpga-flash.log",
+      "progress_title": "Updating 12.3-inch FPGA.."
+    },
+    {
       "title": "14.6-fhd",
-      "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/14.6-fhd.bin",
+      "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
       "async": true,
       "timeout": 350,
       "log_file": "/tmp/fpga-flash.log",

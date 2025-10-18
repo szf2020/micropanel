@@ -135,7 +135,6 @@ main() {
         print_error "Error: log-file-list.txt"
         print_error "not found"
         print_info ""
-        print_info "Press any key..."
         return 1
     fi
 
@@ -145,7 +144,6 @@ main() {
         print_error "Connect USBStick"
         print_info ""
         print_info ""
-        print_info "Press any key..."
         return 1
     fi
 
@@ -155,7 +153,6 @@ main() {
         print_error "Failed to mount USB"
         print_info ""
         print_info ""
-        print_info "Press any key..."
         return 1
     fi
 
@@ -167,7 +164,6 @@ main() {
         print_error "Error: USB full or"
         print_error "write protected"
         print_info ""
-        print_info "Press any key..."
         unmount_usb_stick
         return 1
     fi
@@ -199,6 +195,14 @@ main() {
             if sudo cp -f "$log_file" "$log_folder/" 2>/dev/null; then
                 copied_count=$((copied_count + 1))
             fi
+        # Check if directory exists
+        elif [ -d "$log_file" ]; then
+            # Get directory name for destination
+            local dir_name=$(basename "$log_file")
+            # Copy directory recursively (overwrite if exists)
+            if sudo cp -rf "$log_file" "$log_folder/$dir_name" 2>/dev/null; then
+                copied_count=$((copied_count + 1))
+            fi
         fi
     done < "$LOG_FILE_LIST"
 
@@ -212,7 +216,6 @@ main() {
     print_success "Logs transferred!"
     print_info "Copied $copied_count/$total_count files"
     print_info "SafeToRemove USB"
-    print_info "Press any key..."
 
     return 0
 }

@@ -1,6 +1,54 @@
 cmake_minimum_required(VERSION 3.10)
 project(MicroPanel VERSION 2.0.0 LANGUAGES C CXX)
 
+# Generate version.txt from git commit count
+# Priority: 1) Git commit count, 2) Pre-existing version.txt, 3) PROJECT_VERSION, 4) "unknown"
+
+set(VERSION_SOURCE "")
+
+# Check if version.txt already exists (from pre-packaged tarball)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs/version.txt")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/configs/version.txt" EXISTING_VERSION)
+    string(STRIP "${EXISTING_VERSION}" EXISTING_VERSION)
+    if(NOT EXISTING_VERSION STREQUAL "")
+        set(MICROPANEL_VERSION "${EXISTING_VERSION}")
+        set(VERSION_SOURCE "pre-existing version.txt")
+    endif()
+endif()
+
+# Try git commit count if no existing version
+if(NOT VERSION_SOURCE)
+    execute_process(
+        COMMAND git rev-list --count HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_COUNT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE GIT_RESULT
+    )
+
+    if(GIT_RESULT EQUAL 0 AND GIT_COMMIT_COUNT)
+        set(MICROPANEL_VERSION "v${GIT_COMMIT_COUNT}")
+        set(VERSION_SOURCE "git commit count")
+    endif()
+endif()
+
+# Fallback to project version if git failed
+if(NOT VERSION_SOURCE)
+    if(PROJECT_VERSION)
+        set(MICROPANEL_VERSION "v${PROJECT_VERSION}")
+        set(VERSION_SOURCE "CMake PROJECT_VERSION")
+    else()
+        set(MICROPANEL_VERSION "unknown")
+        set(VERSION_SOURCE "fallback")
+    endif()
+endif()
+
+message(STATUS "MicroPanel version: ${MICROPANEL_VERSION} (from ${VERSION_SOURCE})")
+
+# Write version to configs/version.txt (always update to reflect build-time version)
+file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/configs/version.txt" "${MICROPANEL_VERSION}\n")
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -225,6 +273,14 @@ else()
     else()
         message(WARNING "No default configuration file found in screens/ directory")
     endif()
+endif()
+
+# Install version.txt to /etc/micropanel/
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs/version.txt")
+    install(FILES configs/version.txt
+        DESTINATION etc/micropanel
+    )
+    message(STATUS "Will install version.txt to etc/micropanel/")
 endif()
 
 # Install additional resources if they exist (optional)

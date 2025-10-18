@@ -1,0 +1,13 @@
+# µPanel Log Files List
+# One log file path per line
+# Lines starting with # are comments and will be ignored
+# Empty lines are also ignored
+
+# FPGA flash logs
+/tmp/fpga-flash.log
+
+# RH850 MCU flash logs
+/tmp/rh850-flash.log
+
+# micropanel logs
+/tmp/micropanel.log

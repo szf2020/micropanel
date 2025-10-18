@@ -139,7 +139,7 @@ NetSettingsScreen::Impl::Impl(std::shared_ptr<Display> display, std::shared_ptr<
     
     // Try to initialize from script
     if (!initNetworkSettingsFromScript()) {
-        Logger::warning("Failed to get network settings from script, using defaults");
+        Logger::info("Using default network settings");
     }
 }
 
@@ -153,13 +153,16 @@ NetSettingsScreen::Impl::~Impl() {
 bool NetSettingsScreen::Impl::initNetworkSettingsFromScript() {
     // Command to execute the script
     ///usr/bin/dhcp-net-settings.sh --os=debian --interface=eth0
-    std::string cmd = getNetSettingsScriptPath();
+    std::string scriptPath = getNetSettingsScriptPath();
     std::string ostype = getNetSettingsOsType();
     std::string iface = getNetSettingsInterface();
-    cmd+=" --os="+ostype+" --interface="+iface;
+    std::string cmd = scriptPath + " --os=" + ostype + " --interface=" + iface;
+
+    Logger::debug("Initializing network settings from script: " + cmd);
+
     FILE* fp = popen(cmd.c_str(), "r");
     if (!fp) {
-        Logger::error("Failed to run dhcp-net-settings.sh");
+        Logger::info("Network settings script not available, using defaults");
         return false;
     }
 
@@ -217,7 +220,7 @@ bool NetSettingsScreen::Impl::initNetworkSettingsFromScript() {
 
     // Check if we got all needed information
     if (!foundResult) {
-        Logger::error("Script didn't return result status");
+        Logger::info("Network settings script output incomplete, using defaults");
         return false;
     }
 

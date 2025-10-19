@@ -103,7 +103,7 @@
           "progress_title": "Updating 12.3-inch FPGA.."
         },
         {
-          "title": "14.6-fhd",
+          "title": "14-6-fhd",
           "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 350,
@@ -111,7 +111,7 @@
           "progress_title": "Updating 14.6-fhd FPGA.."
         },
         {
-          "title": "14.6-fhd-half",
+          "title": "14-6-fhd-half",
           "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 350,
@@ -119,10 +119,26 @@
           "progress_title": "Updating $1 FPGA.."
         },
         {
-          "title": "14.6-fhd-full",
+          "title": "14-6-fhd-full",
           "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating $1 FPGA.."
+        },
+        {
+          "title": "14-6-nq3-g1b",
+          "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+          "async": true,
+          "timeout": 400,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating $1 FPGA.."
+        },
+        {
+          "title": "14-6-nq7-g1b",
+          "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+          "async": true,
+          "timeout": 400,
           "log_file": "/tmp/fpga-flash.log",
           "progress_title": "Updating $1 FPGA.."
         },

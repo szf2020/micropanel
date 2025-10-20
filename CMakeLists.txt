@@ -164,6 +164,9 @@ add_executable(micropanel ${SOURCES})
 # Compile patch-generator utility
 add_executable(patch-generator utils/patch-generator.c)
 
+# Compile launcher-client utility
+add_executable(launcher-client utils/launcher-client.c)
+
 # Link libraries in proper order
 target_link_libraries(micropanel
     PRIVATE
@@ -184,7 +187,7 @@ set(SERVICE_USER "root" CACHE STRING "User to run micropanel service as")
 set(SYSTEMD_UNITFILE_ARGS "" CACHE STRING "Additional command line arguments for micropanel in systemd service")
 
 # Install target
-install(TARGETS micropanel patch-generator
+install(TARGETS micropanel patch-generator launcher-client
     RUNTIME DESTINATION usr/bin
 )
 
@@ -215,6 +218,10 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/stop-image.sh
         scripts/micropanel-version.sh
         scripts/micropanel-detect-i2c.sh
+        scripts/list-pattern.sh
+        scripts/play-pattern.sh
+        scripts/stop-pattern.sh
+        scripts/get-current-pattern.sh
         DESTINATION usr/bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     )

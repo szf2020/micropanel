@@ -681,4 +681,5 @@ private:
     bool m_asyncDisplayInitialized = false;
     bool m_parseProgress = false;
     int m_lastParsedPercentage = -1;
+    bool m_prependStaticItems = false;  // Flag to prepend static items (Back, etc) instead of append
 };

@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Stop pattern-generator app via launcher
+# Usage: ./stop-pattern.sh --launcher=127.0.0.1:8081
+
+MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
+
+# Default values
+LAUNCHER_ADDR="127.0.0.1:8081"
+TIMEOUT=2
+
+# Parse command-line arguments
+for arg in "$@"; do
+    case "$arg" in
+        --launcher=*)
+            LAUNCHER_ADDR="${arg#*=}"
+            ;;
+    esac
+done
+
+# Auto-detect launcher-client binary location
+if [ -n "$LAUNCHER_CLIENT" ] && [ -x "$LAUNCHER_CLIENT" ]; then
+    # User explicitly set LAUNCHER_CLIENT - use it
+    true
+elif [ -x "/usr/bin/launcher-client" ]; then
+    # Buildroot: installed to /usr/bin/
+    LAUNCHER_CLIENT="/usr/bin/launcher-client"
+elif [ -n "$MICROPANEL_HOME" ] && [ -x "$MICROPANEL_HOME/build/launcher-client" ]; then
+    # Pi OS: development build
+    LAUNCHER_CLIENT="$MICROPANEL_HOME/build/launcher-client"
+else
+    # Fallback: try PATH
+    LAUNCHER_CLIENT="launcher-client"
+fi
+
+# Send stop command
+response=$("$LAUNCHER_CLIENT" --srv="$LAUNCHER_ADDR" --command=stop-app --timeoutsec="$TIMEOUT" 2>&1)
+exit_code=$?
+
+# Check response
+if [ $exit_code -eq 0 ]; then
+    if echo "$response" | grep -q "OK"; then
+        echo "Pattern-generator stopped"
+        exit 0
+    elif echo "$response" | grep -q "no-app-running"; then
+        echo "No pattern running"
+        exit 0
+    else
+        echo "$response"
+        exit 0
+    fi
+else
+    echo "Error: $response"
+    exit 1
+fi

@@ -1,0 +1,21 @@
+# Pattern Generator - Default Pattern List
+# Format: One pattern name per line
+# This file is auto-updated when pattern-generator app is queried
+
+# Basic colors (most commonly used)
+white
+black
+red
+green
+blue
+cyan
+magenta
+yellow
+
+# Test patterns
+grayscale-ramp
+colorbar
+ansi-checker
+zone-boundary-grid
+blooming-detection
+cross-dimming

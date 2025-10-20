@@ -1,0 +1,140 @@
+#!/bin/sh
+
+# Play a specific pattern using pattern-generator app
+# Usage: ./play-pattern.sh --pattern=white --launcher=127.0.0.1:8081 --pattern-generator=127.0.0.1:8082
+
+MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
+
+# Default values
+LAUNCHER_ADDR="127.0.0.1:8081"
+PATTERN_GEN_ADDR="127.0.0.1:8082"
+PATTERN_NAME=""
+TIMEOUT=2
+
+# Parse command-line arguments
+for arg in "$@"; do
+    case "$arg" in
+        --pattern=*)
+            PATTERN_NAME="${arg#*=}"
+            ;;
+        --launcher=*)
+            LAUNCHER_ADDR="${arg#*=}"
+            ;;
+        --pattern-generator=*)
+            PATTERN_GEN_ADDR="${arg#*=}"
+            ;;
+        *)
+            # Ignore unknown arguments
+            ;;
+    esac
+done
+
+# Validate required arguments
+if [ -z "$PATTERN_NAME" ]; then
+    echo "Error: --pattern required"
+    exit 1
+fi
+
+# Auto-detect launcher-client binary location
+if [ -n "$LAUNCHER_CLIENT" ] && [ -x "$LAUNCHER_CLIENT" ]; then
+    # User explicitly set LAUNCHER_CLIENT - use it
+    true
+elif [ -x "/usr/bin/launcher-client" ]; then
+    # Buildroot: installed to /usr/bin/
+    LAUNCHER_CLIENT="/usr/bin/launcher-client"
+elif [ -n "$MICROPANEL_HOME" ] && [ -x "$MICROPANEL_HOME/build/launcher-client" ]; then
+    # Pi OS: development build
+    LAUNCHER_CLIENT="$MICROPANEL_HOME/build/launcher-client"
+else
+    # Fallback: try PATH
+    LAUNCHER_CLIENT="launcher-client"
+fi
+
+# Check if pattern-generator is running
+check_pattern_generator_running() {
+    local response
+    response=$("$LAUNCHER_CLIENT" --srv="$PATTERN_GEN_ADDR" --command=get-pattern --timeoutsec="$TIMEOUT" 2>&1)
+
+    if [ $? -eq 0 ] && [ -n "$response" ] && ! echo "$response" | grep -qi "error"; then
+        return 0  # Running
+    else
+        return 1  # Not running
+    fi
+}
+
+# Start pattern-generator app via launcher
+start_pattern_generator() {
+    local response
+    response=$("$LAUNCHER_CLIENT" --srv="$LAUNCHER_ADDR" --command=start-app --command-arg=pattern-generator --timeoutsec="$TIMEOUT" 2>&1)
+
+    if [ $? -eq 0 ] && echo "$response" | grep -q "OK"; then
+        # Wait for app to start
+        sleep 2
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Send pattern command to pattern-generator
+send_pattern_command() {
+    local pattern="$1"
+    local response
+    response=$("$LAUNCHER_CLIENT" --srv="$PATTERN_GEN_ADDR" --command=pattern --command-arg="$pattern" --timeoutsec="$TIMEOUT" 2>&1)
+
+    if [ $? -eq 0 ] && echo "$response" | grep -q "OK"; then
+        echo "Pattern '$pattern' active"
+        return 0
+    else
+        echo "Error: Pattern command failed"
+        return 1
+    fi
+}
+
+# Main logic
+main() {
+    # Handle "off" pattern - stop the app entirely
+    if [ "$PATTERN_NAME" = "off" ]; then
+        # Stop pattern-generator via launcher
+        response=$("$LAUNCHER_CLIENT" --srv="$LAUNCHER_ADDR" --command=stop-app --timeoutsec="$TIMEOUT" 2>&1)
+        exit_code=$?
+
+        if [ $exit_code -eq 0 ]; then
+            if echo "$response" | grep -q "OK"; then
+                echo "Pattern-generator stopped (off)"
+                exit 0
+            elif echo "$response" | grep -q "no-app-running"; then
+                echo "Pattern-generator already stopped (off)"
+                exit 0
+            fi
+        fi
+
+        # If we get here, something went wrong
+        echo "Error stopping pattern-generator: $response"
+        exit 1
+    fi
+
+    # Check if pattern-generator is running
+    if ! check_pattern_generator_running; then
+        # Not running - try to start it
+        echo "Starting pattern-generator..."
+        if ! start_pattern_generator; then
+            echo "Error: Failed to start pattern-generator"
+            echo "Check app-launcher"
+            exit 1
+        fi
+    else
+        # App is running - small delay to avoid connection race condition
+        sleep 0.1
+    fi
+
+    # Send pattern command
+    if send_pattern_command "$PATTERN_NAME"; then
+        exit 0
+    else
+        exit 1
+    fi
+}
+
+# Run main function
+main

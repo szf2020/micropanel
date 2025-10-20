@@ -99,6 +99,11 @@ void GenericListScreen::setConfig(const nlohmann::json& config)
         m_itemsAction = config["items_action"].get<std::string>();
     }
 
+    // Check for prepend_static_items flag
+    if (config.contains("prepend_static_items") && config["prepend_static_items"].is_boolean()) {
+        m_prependStaticItems = config["prepend_static_items"].get<bool>();
+    }
+
     // Load dynamic items if source is specified
     if (!m_itemsSource.empty()) {
         loadDynamicItems();
@@ -452,6 +457,13 @@ void GenericListScreen::loadDynamicItems()
     // Clear existing items
     m_items.clear();
 
+    // If prepending static items, add them first
+    if (m_prependStaticItems) {
+        for (const auto& item : staticItems) {
+            m_items.push_back(item);
+        }
+    }
+
     // Parse the result line by line
     std::istringstream iss(result);
     std::string line;
@@ -479,9 +491,11 @@ void GenericListScreen::loadDynamicItems()
         m_items.push_back(item);
     }
 
-    // Add back the static items in their original order
-    for (const auto& item : staticItems) {
-        m_items.push_back(item);
+    // If not prepending, add static items at the end (original behavior)
+    if (!m_prependStaticItems) {
+        for (const auto& item : staticItems) {
+            m_items.push_back(item);
+        }
     }
 
     Logger::debug("Loaded " + std::to_string(m_items.size()) + " items (including static items)");

@@ -55,6 +55,7 @@
       "type": "menu",
       "submenus": [
         {"id": "test_patches", "title": "Test Patches"},
+        {"id": "test_patterns", "title": "Patterns"},
         {"id": "video_player", "title": "Videos"},
         {"id": "image_player", "title": "Images"},
         {"id": "back", "title": "Back"}
@@ -169,6 +170,20 @@
         {"title": "Back"}
       ],
       "list_selection": "/usr/bin/patch-generator --read"
+    },
+    {
+      "id": "test_patterns",
+      "title": "Patterns",
+      "enabled": false,
+      "type": "GenericList",
+      "prepend_static_items": true,
+      "items_source": "/usr/bin/list-pattern.sh --launcher=127.0.0.1:8081 --pattern-generator=127.0.0.1:8082",
+      "items_action": "/usr/bin/play-pattern.sh --pattern=$1 --launcher=127.0.0.1:8081 --pattern-generator=127.0.0.1:8082",
+      "list_selection": "/usr/bin/get-current-pattern.sh --pattern-generator=127.0.0.1:8082",
+      "list_items": [
+        {"title": "Stop-Pattern", "action": "/usr/bin/stop-pattern.sh --launcher=127.0.0.1:8081"},
+        {"title": "Back"}
+      ]
     },
     {
       "id": "power_settings",

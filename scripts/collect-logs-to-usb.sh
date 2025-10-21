@@ -10,7 +10,15 @@ USB_MOUNTED_BY_SCRIPT=0
 
 # Paths
 MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
-LOG_FILE_LIST="$MICROPANEL_HOME/configs/log-file-list.txt"
+
+# Detect buildroot vs Pi OS environment for log-file-list.txt path
+if [ -f "/usr/share/micropanel/configs/log-file-list.txt" ] || [ -d "/usr/share/micropanel" ]; then
+    # Buildroot: installed to /usr/share/micropanel/configs/
+    LOG_FILE_LIST="/usr/share/micropanel/configs/log-file-list.txt"
+else
+    # Pi OS: development environment
+    LOG_FILE_LIST="$MICROPANEL_HOME/configs/log-file-list.txt"
+fi
 
 # Print functions (output to stdout for TextBox display)
 print_info() {

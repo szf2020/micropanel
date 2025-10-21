@@ -222,6 +222,10 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/play-pattern.sh
         scripts/stop-pattern.sh
         scripts/get-current-pattern.sh
+        scripts/pi-cpu-temp.sh
+        scripts/collect-logs-to-usb.sh
+        scripts/network-interfaces-list.sh
+        scripts/network-data-info.sh
         DESTINATION usr/bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     )
@@ -292,21 +296,11 @@ endif()
 option(INSTALL_ADDITIONAL_CONFIGS "Install configs/ directory" OFF)
 if(INSTALL_ADDITIONAL_CONFIGS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs")
     install(DIRECTORY configs/
-        DESTINATION etc/micropanel/configs
+        DESTINATION usr/share/micropanel/configs
         FILES_MATCHING PATTERN "*"
     )
-    message(STATUS "Will install configs/ directory to etc/micropanel/configs/")
-endif()
-
-# Install pi-config-txt.sh template dependencies
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs/config-base.txt.in" AND
-   EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/configs/display-configs.conf")
-    install(FILES
-        configs/config-base.txt.in
-        configs/display-configs.conf
-        DESTINATION usr/share/micropanel/configs
-    )
-    message(STATUS "Will install pi-config-txt template files to usr/share/micropanel/configs/")
+    message(STATUS "Will install configs/ directory to usr/share/micropanel/configs/")
+    message(STATUS "  Includes: pattern-list.txt, log-file-list.txt, config-base.txt.in, display-configs.conf, version.txt")
 endif()
 
 # Configure and install systemd service file

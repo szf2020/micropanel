@@ -116,8 +116,13 @@ main() {
 
     # Check if pattern-generator is running
     if ! check_pattern_generator_running; then
-        # Not running - try to start it
+        # Not running - stop any current app and start pattern-generator
         echo "Starting pattern-generator..."
+
+        # Stop any currently running app to free up launcher slot
+        "$LAUNCHER_CLIENT" --srv="$LAUNCHER_ADDR" --command=stop-app --timeoutsec="$TIMEOUT" >/dev/null 2>&1
+        sleep 0.5  # Brief delay for cleanup
+
         if ! start_pattern_generator; then
             echo "Error: Failed to start pattern-generator"
             echo "Check app-launcher"

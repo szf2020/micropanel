@@ -5,7 +5,15 @@
 # Usage: ./list-pattern.sh --launcher=127.0.0.1:8081 --pattern-generator=127.0.0.1:8082
 
 MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
-PATTERN_LIST_FILE="$MICROPANEL_HOME/configs/pattern-list.txt"
+
+# Detect buildroot vs Pi OS environment for pattern-list.txt path
+if [ -f "/usr/share/micropanel/configs/pattern-list.txt" ] || [ -d "/usr/share/micropanel" ]; then
+    # Buildroot: installed to /usr/share/micropanel/configs/
+    PATTERN_LIST_FILE="/usr/share/micropanel/configs/pattern-list.txt"
+else
+    # Pi OS: development environment
+    PATTERN_LIST_FILE="$MICROPANEL_HOME/configs/pattern-list.txt"
+fi
 
 # Default values
 LAUNCHER_ADDR="127.0.0.1:8081"

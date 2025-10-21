@@ -1,16 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 
 # Pi CPU Temperature Script for MicroPanel
 # Outputs formatted CPU temperature and frequency information
+# Compatible with /bin/sh (POSIX) - works on buildroot busybox and Raspberry Pi OS
 
 # Get CPU temperature (in millidegrees Celsius)
 if [ -f /sys/class/thermal/thermal_zone0/temp ]; then
     temp_raw=$(cat /sys/class/thermal/thermal_zone0/temp)
     temp_celsius=$((temp_raw / 1000))
-    temp_fahrenheit=$(((temp_celsius * 9 / 5) + 32))
 else
     temp_celsius="N/A"
-    temp_fahrenheit="N/A"
 fi
 
 # Get CPU frequency (in Hz, convert to MHz)
@@ -21,16 +20,50 @@ else
     freq_mhz="N/A"
 fi
 
-# Get CPU usage (1 second average)
-cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
-if [ -z "$cpu_usage" ]; then
-    cpu_usage="N/A"
+# Get CPU usage - simplified approach compatible with busybox
+# Try method 1: Read from /proc/stat (most portable)
+if [ -f /proc/stat ]; then
+    # Read initial CPU stats
+    cpu_line1=$(grep '^cpu ' /proc/stat)
+    sleep 1
+    # Read CPU stats after 1 second
+    cpu_line2=$(grep '^cpu ' /proc/stat)
+
+    # Parse values (user, nice, system, idle, iowait, irq, softirq)
+    set -- $cpu_line1
+    idle1=$5
+    total1=0
+    shift  # Remove 'cpu' label
+    for val in "$@"; do
+        total1=$((total1 + val))
+    done
+
+    set -- $cpu_line2
+    idle2=$5
+    total2=0
+    shift
+    for val in "$@"; do
+        total2=$((total2 + val))
+    done
+
+    # Calculate usage
+    idle_delta=$((idle2 - idle1))
+    total_delta=$((total2 - total1))
+
+    if [ "$total_delta" -gt 0 ]; then
+        # Calculate percentage: (total - idle) / total * 100
+        usage=$((100 * (total_delta - idle_delta) / total_delta))
+        cpu_usage="${usage}.0"
+    else
+        cpu_usage="N/A"
+    fi
 else
-    cpu_usage=$(printf "%.1f" "$cpu_usage")
+    cpu_usage="N/A"
 fi
 
 # Output formatted information (4 lines max for MicroPanel)
-echo "Temp: ${temp_celsius}°C"
+# Note: Degree symbol (°) converted to asterisk (*) for ASCII compatibility
+echo "Temp: ${temp_celsius}*C"
 echo "Freq: ${freq_mhz}MHz"
 echo "Usage: ${cpu_usage}%"
 echo "$(date '+%H:%M:%S')"

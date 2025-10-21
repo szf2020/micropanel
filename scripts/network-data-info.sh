@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
 # Network Data Info Script for MicroPanel TextBoxScreen
 # Shows RX/TX bytes and dropped packets for specified interface
 # Usage: ./network-data-info.sh --interface=eth0
+# Compatible with /bin/sh (POSIX) - works on buildroot busybox and Raspberry Pi OS
 
 # Parse command line arguments
 INTERFACE=""
@@ -28,13 +29,13 @@ fi
 
 # Function to convert bytes to human readable format (using shell arithmetic)
 format_bytes() {
-    local bytes=$1
+    bytes=$1
 
     if [ "$bytes" -ge 1073741824 ]; then
         # GB - divide by 1024^3
-        local gb=$((bytes / 1073741824))
-        local remainder=$((bytes % 1073741824))
-        local decimal=$((remainder * 10 / 1073741824))
+        gb=$((bytes / 1073741824))
+        remainder=$((bytes % 1073741824))
+        decimal=$((remainder * 10 / 1073741824))
         if [ "$decimal" -eq 0 ]; then
             echo "${gb}GB"
         else
@@ -42,9 +43,9 @@ format_bytes() {
         fi
     elif [ "$bytes" -ge 1048576 ]; then
         # MB - divide by 1024^2
-        local mb=$((bytes / 1048576))
-        local remainder=$((bytes % 1048576))
-        local decimal=$((remainder * 10 / 1048576))
+        mb=$((bytes / 1048576))
+        remainder=$((bytes % 1048576))
+        decimal=$((remainder * 10 / 1048576))
         if [ "$decimal" -eq 0 ]; then
             echo "${mb}MB"
         else
@@ -52,9 +53,9 @@ format_bytes() {
         fi
     elif [ "$bytes" -ge 1024 ]; then
         # KB - divide by 1024
-        local kb=$((bytes / 1024))
-        local remainder=$((bytes % 1024))
-        local decimal=$((remainder * 10 / 1024))
+        kb=$((bytes / 1024))
+        remainder=$((bytes % 1024))
+        decimal=$((remainder * 10 / 1024))
         if [ "$decimal" -eq 0 ]; then
             echo "${kb}KB"
         else
@@ -78,7 +79,12 @@ if [ -z "$stats" ]; then
 fi
 
 # Parse stats: rx_bytes rx_drop tx_bytes tx_drop
-read rx_bytes rx_drop tx_bytes tx_drop <<< "$stats"
+# Use 'set --' instead of bash here-string (<<<) for POSIX compatibility
+set -- $stats
+rx_bytes=$1
+rx_drop=$2
+tx_bytes=$3
+tx_drop=$4
 
 # Format bytes to human readable
 rx_formatted=$(format_bytes $rx_bytes)

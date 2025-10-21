@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
 # Network Interfaces List Script for MicroPanel GenericListScreen
 # Lists available network interfaces for stats monitoring
+# Compatible with /bin/sh (POSIX) - works on buildroot busybox and Raspberry Pi OS
 
 # Read /proc/net/dev and extract interface names
 # Skip header lines (first 2 lines) and loopback interface

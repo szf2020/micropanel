@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/bin/sh
+
+# Stop Video Playback Script for MicroPanel
+# Stops any currently playing video (mpv process)
+# Compatible with /bin/sh (POSIX) - works on buildroot busybox and Raspberry Pi OS
 
 # Define constants
 LOCK_FILE="/tmp/micropanel_video.lock"
@@ -10,29 +14,29 @@ echo "Stopping video playback" >&2
 # Check if a video is currently playing
 if [ -f "$LOCK_FILE" ]; then
     PLAYING_PID=$(cat "$LOCK_FILE" 2>/dev/null)
-    
+
     # Check if process is still running
     if ps -p "$PLAYING_PID" >/dev/null 2>&1; then
         echo "Stopping video with PID $PLAYING_PID" >&2
-        
+
         # First try graceful termination
         kill "$PLAYING_PID" 2>/dev/null
         # Wait briefly for graceful shutdown
         sleep 1
-        
+
         # Force kill if still running
         if ps -p "$PLAYING_PID" >/dev/null 2>&1; then
             echo "Forcing termination of video process" >&2
             kill -9 "$PLAYING_PID" 2>/dev/null
             sleep 0.5
         fi
-        
+
         # Also kill any other mpv processes that might be running
         pkill -f mpv || true
     else
         echo "No active video process found (stale lock detected)" >&2
     fi
-    
+
     # Remove the lock file
     rm -f "$LOCK_FILE"
 else

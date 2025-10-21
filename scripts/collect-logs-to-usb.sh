@@ -2,7 +2,7 @@
 
 # Collect logs to USB stick
 # Copies log files listed in log-file-list.txt to USB stick
-# Compatible with /bin/sh
+# Compatible with /bin/sh (POSIX) - works on buildroot busybox and Raspberry Pi OS
 
 # USB stick configuration
 USB_MOUNT_POINT="/tmp/micropanel-usb"
@@ -10,6 +10,15 @@ USB_MOUNTED_BY_SCRIPT=0
 
 # Paths
 MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
+
+# Check if we're running as root - if so, don't use sudo
+SUDO_CMD=""
+if [ "$(id -u)" -ne 0 ]; then
+    # Not root, use sudo if available
+    if command -v sudo >/dev/null 2>&1; then
+        SUDO_CMD="sudo"
+    fi
+fi
 
 # Detect buildroot vs Pi OS environment for log-file-list.txt path
 if [ -f "/usr/share/micropanel/configs/log-file-list.txt" ] || [ -d "/usr/share/micropanel" ]; then
@@ -41,15 +50,15 @@ detect_usb_stick() {
             continue
         fi
 
-        local dev_name=$(basename "$block_dev")
-        local removable=$(cat "$block_dev/removable" 2>/dev/null || echo "0")
+        dev_name=$(basename "$block_dev")
+        removable=$(cat "$block_dev/removable" 2>/dev/null || echo "0")
 
         # Check if it's removable (USB sticks have removable=1)
         if [ "$removable" = "1" ]; then
             # Found a removable device, check for partitions
             for part in "$block_dev"/"$dev_name"*; do
                 if [ -e "$part" ]; then
-                    local part_name=$(basename "$part")
+                    part_name=$(basename "$part")
                     if [ "$part_name" != "$dev_name" ]; then
                         echo "/dev/$part_name"
                         return 0
@@ -68,11 +77,13 @@ detect_usb_stick() {
 
 # Detect filesystem type
 detect_filesystem() {
-    local device="$1"
+    device="$1"
 
     if command -v blkid >/dev/null 2>&1; then
-        local fstype=$(sudo blkid -o value -s TYPE "$device" 2>/dev/null)
-        if [ -n "$fstype" ]; then
+        # Use blkid to get filesystem type
+        # Note: On some systems blkid might not work without root, so we try it anyway
+        fstype=$($SUDO_CMD blkid -s TYPE -o value "$device" 2>/dev/null | head -n1)
+        if [ -n "$fstype" ] && [ "$fstype" != "$device"* ]; then
             echo "$fstype"
             return 0
         fi
@@ -85,7 +96,7 @@ detect_filesystem() {
 
 # Mount USB stick
 mount_usb_stick() {
-    local device="$1"
+    device="$1"
 
     # Check if already mounted
     if mount | grep -q "$USB_MOUNT_POINT"; then
@@ -95,22 +106,22 @@ mount_usb_stick() {
 
     # Create mount point if needed
     if [ ! -d "$USB_MOUNT_POINT" ]; then
-        if ! sudo mkdir -p "$USB_MOUNT_POINT" 2>/dev/null; then
+        if ! $SUDO_CMD mkdir -p "$USB_MOUNT_POINT" 2>/dev/null; then
             return 1
         fi
     fi
 
     # Detect filesystem type
-    local fstype=$(detect_filesystem "$device")
+    fstype=$(detect_filesystem "$device")
 
     # Try to mount with detected filesystem type
-    if sudo mount -t "$fstype" "$device" "$USB_MOUNT_POINT" 2>/dev/null; then
+    if $SUDO_CMD mount -t "$fstype" "$device" "$USB_MOUNT_POINT" 2>/dev/null; then
         USB_MOUNTED_BY_SCRIPT=1
         echo "$USB_MOUNT_POINT"
         return 0
     else
         # Try auto-detection
-        if sudo mount "$device" "$USB_MOUNT_POINT" 2>/dev/null; then
+        if $SUDO_CMD mount "$device" "$USB_MOUNT_POINT" 2>/dev/null; then
             USB_MOUNTED_BY_SCRIPT=1
             echo "$USB_MOUNT_POINT"
             return 0
@@ -126,7 +137,7 @@ unmount_usb_stick() {
         # Sync before unmount
         sync
 
-        if sudo umount "$USB_MOUNT_POINT" 2>/dev/null; then
+        if $SUDO_CMD umount "$USB_MOUNT_POINT" 2>/dev/null; then
             return 0
         fi
     fi
@@ -147,7 +158,7 @@ main() {
     fi
 
     # Detect USB stick
-    local usb_device
+    usb_device=""
     if ! usb_device=$(detect_usb_stick); then
         print_error "Connect USBStick"
         print_info ""
@@ -156,7 +167,7 @@ main() {
     fi
 
     # Mount USB stick
-    local mount_point
+    mount_point=""
     if ! mount_point=$(mount_usb_stick "$usb_device"); then
         print_error "Failed to mount USB"
         print_info ""
@@ -165,10 +176,10 @@ main() {
     fi
 
     # Create log folder with timestamp
-    local timestamp=$(date +%Y-%m-%d-%H%M%S)
-    local log_folder="$mount_point/micropanel-logs-$timestamp"
+    timestamp=$(date +%Y-%m-%d-%H%M%S)
+    log_folder="$mount_point/micropanel-logs-$timestamp"
 
-    if ! sudo mkdir -p "$log_folder" 2>/dev/null; then
+    if ! $SUDO_CMD mkdir -p "$log_folder" 2>/dev/null; then
         print_error "Error: USB full or"
         print_error "write protected"
         print_info ""
@@ -177,8 +188,8 @@ main() {
     fi
 
     # Copy log files from list
-    local copied_count=0
-    local total_count=0
+    copied_count=0
+    total_count=0
 
     while IFS= read -r log_file || [ -n "$log_file" ]; do
         # Skip empty lines
@@ -200,15 +211,15 @@ main() {
         # Check if file exists
         if [ -f "$log_file" ]; then
             # Copy file (overwrite if exists)
-            if sudo cp -f "$log_file" "$log_folder/" 2>/dev/null; then
+            if $SUDO_CMD cp -f "$log_file" "$log_folder/" 2>/dev/null; then
                 copied_count=$((copied_count + 1))
             fi
         # Check if directory exists
         elif [ -d "$log_file" ]; then
             # Get directory name for destination
-            local dir_name=$(basename "$log_file")
+            dir_name=$(basename "$log_file")
             # Copy directory recursively (overwrite if exists)
-            if sudo cp -rf "$log_file" "$log_folder/$dir_name" 2>/dev/null; then
+            if $SUDO_CMD cp -rf "$log_file" "$log_folder/$dir_name" 2>/dev/null; then
                 copied_count=$((copied_count + 1))
             fi
         fi

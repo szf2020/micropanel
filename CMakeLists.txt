@@ -226,6 +226,7 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/collect-logs-to-usb.sh
         scripts/network-interfaces-list.sh
         scripts/network-data-info.sh
+        screens/update-config-path.sh
         DESTINATION usr/bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     )

@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=@SERVICE_USER@
-ExecStart=/bin/sh -c 'I2C_BUS=$$(@CMAKE_INSTALL_PREFIX@/bin/micropanel-detect-i2c.sh); @CMAKE_INSTALL_PREFIX@/bin/micropanel @SYSTEMD_UNITFILE_ARGS@ -a -s "$$I2C_BUS" -c @CMAKE_INSTALL_PREFIX@/etc/micropanel/config.json >/tmp/micropanel.log 2>&1'
+ExecStart=/bin/sh -c 'I2C_BUS=$$(@CMAKE_INSTALL_PREFIX@/usr/bin/micropanel-detect-i2c.sh); @CMAKE_INSTALL_PREFIX@/usr/bin/micropanel @SYSTEMD_UNITFILE_ARGS@ -a -s "$$I2C_BUS" -c @CMAKE_INSTALL_PREFIX@/etc/micropanel/config.json >/tmp/micropanel.log 2>&1'
 Restart=on-failure
 RestartSec=5
 

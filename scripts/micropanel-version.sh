@@ -9,6 +9,9 @@ MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
 if [ -f "$MICROPANEL_HOME/configs/version.txt" ]; then
     # Development/local installation
     cat "$MICROPANEL_HOME/configs/version.txt"
+elif [ -f "$MICROPANEL_HOME/etc/micropanel/version.txt" ]; then
+    #cmake based installation for pi-os-lite images
+    cat "$MICROPANEL_HOME/etc/micropanel/version.txt"
 elif [ -f "/etc/micropanel/version.txt" ]; then
     # System-wide installation
     cat "/etc/micropanel/version.txt"

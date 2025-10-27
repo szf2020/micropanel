@@ -144,7 +144,7 @@
           "progress_title": "Updating $1 FPGA.."
         },
         {
-          "title": "15.6-2k5",
+          "title": "15-6-2k5",
           "action": "sudo $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-lattice.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bit",
           "async": true,
           "timeout": 70,

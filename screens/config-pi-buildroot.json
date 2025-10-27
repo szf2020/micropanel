@@ -96,7 +96,7 @@
       "type": "GenericList",
       "list_items": [
         {
-          "title": "12.3-inch",
+          "title": "12-3-inch",
           "action": "/usr/bin/fpga-jtag-flasher.sh --flash=/usr/share/micropanel/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 350,
@@ -104,7 +104,7 @@
           "progress_title": "Updating 12.3-inch FPGA.."
         },
         {
-          "title": "14.6-fhd",
+          "title": "14-6-fhd",
           "action": "/usr/bin/fpga-jtag-flasher.sh --flash=/usr/share/micropanel/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 350,
@@ -112,7 +112,7 @@
           "progress_title": "Updating 14.6-fhd FPGA.."
         },
         {
-          "title": "14.6-fhd-half",
+          "title": "14-6-fhd-half",
           "action": "/usr/bin/fpga-jtag-flasher.sh --flash=/usr/share/micropanel/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 350,
@@ -120,7 +120,7 @@
           "progress_title": "Updating $1 FPGA.."
         },
         {
-          "title": "14.6-fhd-full",
+          "title": "14-6-fhd-full",
           "action": "/usr/bin/fpga-jtag-flasher.sh --flash=/usr/share/micropanel/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 350,
@@ -128,7 +128,7 @@
           "progress_title": "Updating $1 FPGA.."
         },
         {
-          "title": "14.6-nq3-g1b",
+          "title": "14-6-nq3-g1b",
           "action": "/usr/bin/fpga-jtag-flasher.sh --flash=/usr/share/micropanel/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 400,
@@ -136,7 +136,7 @@
           "progress_title": "Updating $1 FPGA.."
         },
         {
-          "title": "14.6-nq7-g1b",
+          "title": "14-6-nq7-g1b",
           "action": "/usr/bin/fpga-jtag-flasher.sh --flash=/usr/share/micropanel/fpga/bitbin/$1.bin",
           "async": true,
           "timeout": 400,
@@ -144,7 +144,7 @@
           "progress_title": "Updating $1 FPGA.."
         },
         {
-          "title": "15.6-2k5",
+          "title": "15-6-2k5",
           "action": "/usr/bin/fpga-jtag-flasher-lattice.sh --flash=/usr/share/micropanel/fpga/bitbin/$1.bit",
           "async": true,
           "timeout": 70,

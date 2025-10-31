@@ -200,8 +200,20 @@ if(NOT INSTALL_SYSTEMD_SERVICE)
     message(STATUS "Will install SysV init script to etc/init.d/micropanel")
 endif()
 
+# Configure template scripts that need CMAKE_INSTALL_PREFIX substitution
+# These scripts reference launcher-client binary and need to know the install path
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/stop-pattern.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/scripts/stop-pattern.sh @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/list-pattern.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/scripts/list-pattern.sh @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/get-current-pattern.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/scripts/get-current-pattern.sh @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/play-pattern.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/scripts/play-pattern.sh @ONLY)
+
 # Install helper shell scripts
 if(INSTALL_HELPER_SCRIPTS)
+    # Install static scripts (from source directory)
     install(FILES
         scripts/dhcp-net-settings.sh
         scripts/dhcp-net-settings-buildroot.sh
@@ -218,10 +230,6 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/stop-image.sh
         scripts/micropanel-version.sh
         scripts/micropanel-detect-i2c.sh
-        scripts/list-pattern.sh
-        scripts/play-pattern.sh
-        scripts/stop-pattern.sh
-        scripts/get-current-pattern.sh
         scripts/pi-cpu-temp.sh
         scripts/collect-logs-to-usb.sh
         scripts/network-interfaces-list.sh
@@ -230,7 +238,19 @@ if(INSTALL_HELPER_SCRIPTS)
         DESTINATION usr/bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     )
+
+    # Install generated scripts (from build directory - configured with CMAKE_INSTALL_PREFIX)
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/scripts/list-pattern.sh
+        ${CMAKE_CURRENT_BINARY_DIR}/scripts/play-pattern.sh
+        ${CMAKE_CURRENT_BINARY_DIR}/scripts/stop-pattern.sh
+        ${CMAKE_CURRENT_BINARY_DIR}/scripts/get-current-pattern.sh
+        DESTINATION usr/bin
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    )
+
     message(STATUS "Will install helper scripts to /usr/bin/")
+    message(STATUS "  Pattern scripts configured with CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}")
 endif()
 
 # Install media files

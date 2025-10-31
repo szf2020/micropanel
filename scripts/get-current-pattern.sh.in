@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# Get currently active pattern from pattern-generator app
+# Usage: ./get-current-pattern.sh --pattern-generator=127.0.0.1:8082
+
+MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
+
+# Default values
+PATTERN_GEN_ADDR="127.0.0.1:8082"
+TIMEOUT=2
+
+# Parse command-line arguments
+for arg in "$@"; do
+    case "$arg" in
+        --pattern-generator=*)
+            PATTERN_GEN_ADDR="${arg#*=}"
+            ;;
+        *)
+            # Ignore unknown arguments
+            ;;
+    esac
+done
+
+# Auto-detect launcher-client binary location
+if [ -n "$LAUNCHER_CLIENT" ] && [ -x "$LAUNCHER_CLIENT" ]; then
+    # User explicitly set LAUNCHER_CLIENT - use it
+    true
+elif [ -x "@CMAKE_INSTALL_PREFIX@/usr/bin/launcher-client" ]; then
+    # Installed location (from CMAKE_INSTALL_PREFIX)
+    LAUNCHER_CLIENT="@CMAKE_INSTALL_PREFIX@/usr/bin/launcher-client"
+elif [ -x "/usr/bin/launcher-client" ]; then
+    # System-wide buildroot install
+    LAUNCHER_CLIENT="/usr/bin/launcher-client"
+elif [ -n "$MICROPANEL_HOME" ] && [ -x "$MICROPANEL_HOME/build/launcher-client" ]; then
+    # Pi OS: development build
+    LAUNCHER_CLIENT="$MICROPANEL_HOME/build/launcher-client"
+else
+    # Fallback: try PATH
+    LAUNCHER_CLIENT="launcher-client"
+fi
+
+# Query current pattern
+response=$("$LAUNCHER_CLIENT" --srv="$PATTERN_GEN_ADDR" --command=get-pattern --timeoutsec="$TIMEOUT" 2>&1)
+
+if [ $? -eq 0 ] && [ -n "$response" ] && ! echo "$response" | grep -qi "error"; then
+    echo "$response"
+else
+    # App not running or error - return "off" to match the "off" menu item
+    echo "off"
+fi
+
+exit 0

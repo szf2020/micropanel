@@ -12,5 +12,5 @@
 # micropanel logs
 /tmp/micropanel.log
 
-#vivado-logs
-/tmp/vivado-logs/*.log
+#vivado-logs (entire directory)
+/tmp/vivado-logs

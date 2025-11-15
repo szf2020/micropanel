@@ -212,21 +212,51 @@ main() {
 
         total_count=$((total_count + 1))
 
-        # Check if file exists
-        if [ -f "$log_file" ]; then
-            # Copy file (overwrite if exists)
-            if $SUDO_CMD cp -f "$log_file" "$log_folder/" 2>/dev/null; then
-                copied_count=$((copied_count + 1))
-            fi
-        # Check if directory exists
-        elif [ -d "$log_file" ]; then
-            # Get directory name for destination
-            dir_name=$(basename "$log_file")
-            # Copy directory recursively (overwrite if exists)
-            if $SUDO_CMD cp -rf "$log_file" "$log_folder/$dir_name" 2>/dev/null; then
-                copied_count=$((copied_count + 1))
-            fi
-        fi
+        # Check if pattern contains wildcards (* or ?)
+        case "$log_file" in
+            *\**|*\?*)
+                # Expand glob pattern
+                matched_files=0
+                for expanded_file in $log_file; do
+                    # Check if glob actually matched files (not literal pattern)
+                    if [ -e "$expanded_file" ]; then
+                        if [ -f "$expanded_file" ]; then
+                            if $SUDO_CMD cp -f "$expanded_file" "$log_folder/" 2>/dev/null; then
+                                copied_count=$((copied_count + 1))
+                                matched_files=$((matched_files + 1))
+                            fi
+                        elif [ -d "$expanded_file" ]; then
+                            dir_name=$(basename "$expanded_file")
+                            if $SUDO_CMD cp -rf "$expanded_file" "$log_folder/$dir_name" 2>/dev/null; then
+                                copied_count=$((copied_count + 1))
+                                matched_files=$((matched_files + 1))
+                            fi
+                        fi
+                    fi
+                done
+                # If no files matched, don't count this pattern as success
+                if [ "$matched_files" -eq 0 ]; then
+                    total_count=$((total_count - 1))
+                fi
+                ;;
+            *)
+                # No wildcards - handle as single file/directory
+                if [ -f "$log_file" ]; then
+                    # Copy file (overwrite if exists)
+                    if $SUDO_CMD cp -f "$log_file" "$log_folder/" 2>/dev/null; then
+                        copied_count=$((copied_count + 1))
+                    fi
+                # Check if directory exists
+                elif [ -d "$log_file" ]; then
+                    # Get directory name for destination
+                    dir_name=$(basename "$log_file")
+                    # Copy directory recursively (overwrite if exists)
+                    if $SUDO_CMD cp -rf "$log_file" "$log_folder/$dir_name" 2>/dev/null; then
+                        copied_count=$((copied_count + 1))
+                    fi
+                fi
+                ;;
+        esac
     done < "$LOG_FILE_LIST"
 
     # Ensure all data is flushed to USB

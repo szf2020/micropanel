@@ -79,31 +79,189 @@
       "id": "update_fpga",
       "title": "Update FPGA",
       "enabled": false,
+      "type": "menu",
+      "submenus": [
+        {"id": "fpga_14_6_fhd", "title": "14-6-fhd"},
+        {"id": "fpga_12_3_inch", "title": "12-3-inch"},
+        {"id": "fpga_12_3_au15p", "title": "12-3-au15p"},
+        {"id": "fpga_35_6_au15p", "title": "35-6-au15p"},
+        {"id": "back", "title": "Back"}
+      ]
+    },
+    {
+      "id": "fpga_14_6_fhd",
+      "title": "14-6-fhd",
+      "enabled": false,
       "type": "GenericList",
       "list_items": [
         {
-          "title": "14-6-fhd",
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-tool.sh info --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 14-6-fhd..",
+          "result_pattern": "FPGA detected:",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
           "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=flash --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
           "async": true,
           "timeout": 150,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating 14-6-fhd FPGA.."
+          "progress_title": "Updating 14-6-fhd.."
         },
         {
-          "title": "14-6-fhd-bkup",
+          "title": "Backup",
           "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=dump --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
           "async": true,
           "timeout": 350,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Backing up 14-6-fhd FPGA.."
+          "progress_title": "Backing up 14-6-fhd.."
         },
         {
-          "title": "14-6-fhd-rvrt",
+          "title": "Revert",
           "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=revert --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
           "async": true,
           "timeout": 150,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Reverting 14-6-fhd FPGA.."
+          "progress_title": "Reverting 14-6-fhd.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_12_3_inch",
+      "title": "12-3-inch",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-tool.sh info --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 12-3-inch..",
+          "result_pattern": "FPGA detected:",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=flash --file=12-3-inch --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
+          "async": true,
+          "timeout": 150,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating 12-3-inch.."
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=dump --file=12-3-inch --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Backing up 12-3-inch.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=revert --file=12-3-inch --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
+          "async": true,
+          "timeout": 150,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 12-3-inch.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_12_3_au15p",
+      "title": "12-3-au15p",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-tool.sh info --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
+          "async": true,
+          "timeout": 40,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 12-3-au15p..",
+          "result_pattern": "FPGA detected:",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=flash --file=12-3-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
+          "async": true,
+          "timeout": 150,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating 12-3-au15p.."
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=dump --file=12-3-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Backing up 12-3-au15p.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=revert --file=12-3-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
+          "async": true,
+          "timeout": 150,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 12-3-au15p.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_35_6_au15p",
+      "title": "35-6-au15p",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-tool.sh info --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
+          "async": true,
+          "timeout": 40,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 35-6-au15p..",
+          "result_pattern": "FPGA detected:",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=flash --file=35-6-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
+          "async": true,
+          "timeout": 150,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating 35-6-au15p.."
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=dump --file=35-6-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Backing up 35-6-au15p.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=revert --file=35-6-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
+          "async": true,
+          "timeout": 150,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 35-6-au15p.."
         },
         {
           "title": "Back"

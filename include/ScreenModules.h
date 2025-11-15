@@ -601,6 +601,8 @@ public:
         std::string log_file;
         std::string progress_title;
 	bool parse_progress = false;
+        std::string result_pattern;  // Pattern to search in log for result extraction
+        std::string result_prefix;   // Prefix to add when displaying result
     };
     GenericListScreen(std::shared_ptr<Display> display, std::shared_ptr<InputDevice> input);
     ~GenericListScreen();
@@ -682,4 +684,7 @@ private:
     bool m_parseProgress = false;
     int m_lastParsedPercentage = -1;
     bool m_prependStaticItems = false;  // Flag to prepend static items (Back, etc) instead of append
+    std::string m_resultString;  // Store result information from async command (e.g., detected FPGA)
+    std::string m_asyncResultPattern;  // Pattern to search for in log file
+    std::string m_asyncResultPrefix;   // Prefix to add to extracted result
 };

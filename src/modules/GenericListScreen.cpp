@@ -73,6 +73,14 @@ void GenericListScreen::setConfig(const nlohmann::json& config)
                 listItem.parse_progress = item["parse_progress"].get<bool>();
             }
 
+            if (item.contains("result_pattern") && item["result_pattern"].is_string()) {
+                listItem.result_pattern = item["result_pattern"].get<std::string>();
+            }
+
+            if (item.contains("result_prefix") && item["result_prefix"].is_string()) {
+                listItem.result_prefix = item["result_prefix"].get<std::string>();
+            }
+
             m_items.push_back(listItem);
         }
     }
@@ -508,6 +516,8 @@ void GenericListScreen::startAsyncProcess(const ListItem& item)
     Logger::debug("Starting async process: " + item.action);
     m_parseProgress = item.parse_progress;
     m_lastParsedPercentage = -1;
+    m_asyncResultPattern = item.result_pattern;
+    m_asyncResultPrefix = item.result_prefix;
 
     // Prepare the command with parameter substitution
     std::string command = item.action;
@@ -643,10 +653,21 @@ void GenericListScreen::renderAsyncProgress()
         usleep(Config::DISPLAY_CMD_DELAY);
         m_display->drawText(0, 8, "Success!");
         usleep(Config::DISPLAY_CMD_DELAY);
-        m_display->drawText(0, 24, "Press any button");
-        usleep(Config::DISPLAY_CMD_DELAY);
-        m_display->drawText(0, 32, "to continue");
-        usleep(Config::DISPLAY_CMD_DELAY);
+
+        // Show result string if available (e.g., detected FPGA, flash info, etc.)
+        if (!m_resultString.empty()) {
+            m_display->drawText(0, 16, m_resultString);
+            usleep(Config::DISPLAY_CMD_DELAY);
+            m_display->drawText(0, 32, "Press any button");
+            usleep(Config::DISPLAY_CMD_DELAY);
+            m_display->drawText(0, 40, "to continue");
+            usleep(Config::DISPLAY_CMD_DELAY);
+        } else {
+            m_display->drawText(0, 24, "Press any button");
+            usleep(Config::DISPLAY_CMD_DELAY);
+            m_display->drawText(0, 32, "to continue");
+            usleep(Config::DISPLAY_CMD_DELAY);
+        }
 
     } else if (m_asyncState == AsyncState::FAILED || m_asyncState == AsyncState::TIMEOUT) {
         // Clear display once for error message
@@ -742,6 +763,9 @@ bool GenericListScreen::parseLogForCompletion()
     bool foundSuccess = false;
     bool foundError = false;
 
+    // Clear any previous result string
+    m_resultString = "";
+
     while (std::getline(logFile, line)) {
         if (line.find("[SUCCESS]") != std::string::npos) {
             foundSuccess = true;
@@ -761,6 +785,26 @@ bool GenericListScreen::parseLogForCompletion()
             line.find("Failed") != std::string::npos ||
             line.find("failed") != std::string::npos) {
             foundError = true;
+        }
+
+        // Extract result using configurable pattern (generic result extraction)
+        if (!m_asyncResultPattern.empty() && line.find(m_asyncResultPattern) != std::string::npos) {
+            size_t pos = line.find(m_asyncResultPattern);
+            if (pos != std::string::npos) {
+                std::string extractedValue = line.substr(pos + m_asyncResultPattern.length());
+                // Trim leading/trailing whitespace
+                size_t start = extractedValue.find_first_not_of(" \t\r\n");
+                size_t end = extractedValue.find_last_not_of(" \t\r\n");
+                if (start != std::string::npos && end != std::string::npos) {
+                    extractedValue = extractedValue.substr(start, end - start + 1);
+                    // Apply prefix if configured
+                    if (!m_asyncResultPrefix.empty()) {
+                        m_resultString = m_asyncResultPrefix + extractedValue;
+                    } else {
+                        m_resultString = extractedValue;
+                    }
+                }
+            }
         }
     }
 

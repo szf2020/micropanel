@@ -11,3 +11,6 @@
 
 # micropanel logs
 /tmp/micropanel.log
+
+#vivado-logs
+/tmp/vivado-logs/*.log

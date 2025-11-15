@@ -198,7 +198,7 @@
           "title": "Update",
           "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=flash --file=12-3-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
           "async": true,
-          "timeout": 150,
+          "timeout": 650,
           "log_file": "/tmp/fpga-flash.log",
           "progress_title": "Updating 12-3-au15p.."
         },
@@ -214,7 +214,7 @@
           "title": "Revert",
           "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=revert --file=12-3-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
           "async": true,
-          "timeout": 150,
+          "timeout": 650,
           "log_file": "/tmp/fpga-flash.log",
           "progress_title": "Reverting 12-3-au15p.."
         },
@@ -243,7 +243,7 @@
           "title": "Update",
           "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=flash --file=35-6-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
           "async": true,
-          "timeout": 150,
+          "timeout": 650,
           "log_file": "/tmp/fpga-flash.log",
           "progress_title": "Updating 35-6-au15p.."
         },
@@ -259,7 +259,7 @@
           "title": "Revert",
           "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=revert --file=35-6-au15p --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xcau15p-is25wp128f --verbose",
           "async": true,
-          "timeout": 150,
+          "timeout": 650,
           "log_file": "/tmp/fpga-flash.log",
           "progress_title": "Reverting 35-6-au15p.."
         },

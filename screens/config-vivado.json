@@ -308,7 +308,7 @@
       "list_items": [
         {"title": "Back"}
       ],
-      "items_source": "$MICROPANEL_HOME/scripts/network-interfaces-list.sh",
+      "items_source": "$MICROPANEL_HOME/usr/bin/network-interfaces-list.sh",
       "items_action": "launch_module:textbox"
     },
     {
@@ -317,7 +317,7 @@
       "enabled": false,
       "type": "textbox",
       "depends": {
-        "script_path": "$MICROPANEL_HOME/scripts/network-data-info.sh --interface=$INTERFACE",
+        "script_path": "$MICROPANEL_HOME/usr/bin/network-data-info.sh --interface=$INTERFACE",
         "refresh_sec": "2.0",
         "display_title": "$INTERFACE Stats"
       }
@@ -368,7 +368,7 @@
       "title": "IP Settings",
       "enabled": false,
       "depends": {
-        "action_script": "$MICROPANEL_HOME/scripts/dhcp-net-settings.sh",
+        "action_script": "$MICROPANEL_HOME/usr/bin/dhcp-net-settings.sh",
         "os_type": "pios",
         "iface_name": "eth0"
       }
@@ -397,7 +397,7 @@
       "enabled": false,
       "type": "textbox",
       "depends": {
-        "script_path": "$MICROPANEL_HOME/scripts/micropanel-version.sh",
+        "script_path": "$MICROPANEL_HOME/usb/bin/micropanel-version.sh",
         "display_title": "Version"
       }
     },
@@ -407,7 +407,7 @@
       "enabled": false,
       "type": "textbox",
       "depends": {
-        "script_path": "$MICROPANEL_HOME/scripts/pi-cpu-temp.sh",
+        "script_path": "$MICROPANEL_HOME/usr/bin/pi-cpu-temp.sh",
         "refresh_sec": "1.0",
         "display_title": "CPU-Temp"
       }
@@ -418,7 +418,7 @@
       "enabled": false,
       "type": "textbox",
       "depends": {
-        "script_path": "$MICROPANEL_HOME/scripts/collect-logs-to-usb.sh",
+        "script_path": "$MICROPANEL_HOME/usr/bin/collect-logs-to-usb.sh",
         "display_title": "Transfer Logs"
       }
     },

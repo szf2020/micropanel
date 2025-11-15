@@ -20,12 +20,16 @@ if [ "$(id -u)" -ne 0 ]; then
     fi
 fi
 
-# Detect buildroot vs Pi OS environment for log-file-list.txt path
-if [ -f "/usr/share/micropanel/configs/log-file-list.txt" ] || [ -d "/usr/share/micropanel" ]; then
-    # Buildroot: installed to /usr/share/micropanel/configs/
+# Detect log-file-list.txt path in multiple locations
+# Priority: system install > user install > development
+if [ -f "/usr/share/micropanel/configs/log-file-list.txt" ]; then
+    # System install (buildroot or package manager)
     LOG_FILE_LIST="/usr/share/micropanel/configs/log-file-list.txt"
+elif [ -f "/home/pi/micropanel/usr/share/micropanel/configs/log-file-list.txt" ]; then
+    # User install under /home/pi/micropanel/usr/
+    LOG_FILE_LIST="/home/pi/micropanel/usr/share/micropanel/configs/log-file-list.txt"
 else
-    # Pi OS: development environment
+    # Development environment
     LOG_FILE_LIST="$MICROPANEL_HOME/configs/log-file-list.txt"
 fi
 

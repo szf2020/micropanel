@@ -83,7 +83,7 @@
       "list_items": [
         {
           "title": "14-6-fhd",
-          "action": "$MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=flash --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=flash --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
           "async": true,
           "timeout": 150,
           "log_file": "/tmp/fpga-flash.log",
@@ -91,7 +91,7 @@
         },
         {
           "title": "14-6-fhd-bkup",
-          "action": "$MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=dump --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=dump --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
           "async": true,
           "timeout": 350,
           "log_file": "/tmp/fpga-flash.log",
@@ -99,7 +99,7 @@
         },
         {
           "title": "14-6-fhd-rvrt",
-          "action": "$MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=revert --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/vivado-tool/vivado-fpga-flash-wrapper.sh --operation=revert --file=14-6-fhd --vivado=/home/pi/Xilinx/2025.1/Vivado_Lab --board=xc7s50-is25lp128f --verbose",
           "async": true,
           "timeout": 150,
           "log_file": "/tmp/fpga-flash.log",

@@ -639,7 +639,7 @@ void GenericListScreen::renderAsyncProgress()
         m_display->clear();
         usleep(Config::DISPLAY_CMD_DELAY * 5);
 
-        m_display->drawText(0, 0, "Update");
+        m_display->drawText(0, 0, "Action");
         usleep(Config::DISPLAY_CMD_DELAY);
         m_display->drawText(0, 8, "Success!");
         usleep(Config::DISPLAY_CMD_DELAY);

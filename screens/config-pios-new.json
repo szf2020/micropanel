@@ -551,8 +551,8 @@
       "enabled": false,
       "type": "GenericList",
       "items_source": "$MICROPANEL_HOME/usr/bin/list-videos.sh",
-      "items_path": "$MICROPANEL_HOME/media/videos",
-      "items_action": "$MICROPANEL_HOME/usr/bin/play-video.sh $1 $MICROPANEL_HOME/media/videos",
+      "items_path": "$MICROPANEL_HOME/usr/share/micropanel/media/videos",
+      "items_action": "$MICROPANEL_HOME/usr/bin/play-video.sh $1 $MICROPANEL_HOME/usr/share/micropanel/media/videos",
       "list_selection": "$MICROPANEL_HOME/usr/bin/list-videos.sh",
       "list_items": [
         {"title": "Stop-Playback", "action": "$MICROPANEL_HOME/usr/bin/stop-video.sh"},
@@ -565,8 +565,8 @@
       "enabled": false,
       "type": "GenericList",
       "items_source": "$MICROPANEL_HOME/usr/bin/list-images.sh",
-      "items_path": "$MICROPANEL_HOME/media/images",
-      "items_action": "$MICROPANEL_HOME/usr/bin/play-image.sh $1 $MICROPANEL_HOME/media/images",
+      "items_path": "$MICROPANEL_HOME/usr/share/micropanel/media/images",
+      "items_action": "$MICROPANEL_HOME/usr/bin/play-image.sh $1 $MICROPANEL_HOME/usr/share/micropanel/media/images",
       "list_selection": "$MICROPANEL_HOME/usr/bin/list-images.sh",
       "list_items": [
         {"title": "Stop-Playback", "action": "$MICROPANEL_HOME/usr/bin/stop-image.sh"},
@@ -591,14 +591,14 @@
       "type": "GenericList",
       "list_items": [
         {"title": "Back"},
-        {"title": "edid", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "12.3", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "14.6-fhd", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "14.6-2k5", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "15.6-2k5", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "27", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"}
+        {"title": "edid", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "12.3", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "14.6-fhd", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "14.6-2k5", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "15.6-2k5", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "27", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"}
       ],
-      "list_selection": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt"
+      "list_selection": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt"
     },
     {
       "id": "netinfo",

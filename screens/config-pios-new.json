@@ -93,71 +93,373 @@
       "id": "update_fpga",
       "title": "Update FPGA",
       "enabled": false,
+      "type": "menu",
+      "submenus": [
+        {"id": "fpga_12_3_inch", "title": "12-3-inch"},
+        {"id": "fpga_14_6_fhd", "title": "14-6-fhd"},
+        {"id": "fpga_14_6_fhd_half", "title": "14-6-fhd-half"},
+        {"id": "fpga_14_6_fhd_full", "title": "14-6-fhd-full"},
+        {"id": "fpga_14_6_nq3_g1b", "title": "14-6-nq3-g1b"},
+        {"id": "fpga_14_6_nq7_g1b", "title": "14-6-nq7-g1b"},
+        {"id": "fpga_15_6_2k5", "title": "15-6-2k5"},
+        {"id": "fpga_27_inch", "title": "27-inch"},
+        {"id": "back", "title": "Back"}
+      ]
+    },
+    {
+      "id": "fpga_12_3_inch",
+      "title": "12-3-inch",
+      "enabled": false,
       "type": "GenericList",
       "list_items": [
         {
-          "title": "12-3-inch",
-          "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --info --skipbitstream",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 12-3-inch..",
+          "result_pattern": "DEVICE=",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=flash --file=12-3-inch --fpga-type=xilinx",
           "async": true,
           "timeout": 350,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating 12.3-inch FPGA.."
+          "progress_title": "Updating 12-3-inch.."
         },
         {
-          "title": "14-6-fhd",
-          "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=dump --file=12-3-inch --fpga-type=xilinx --size=2192012",
           "async": true,
           "timeout": 350,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating 14.6-fhd FPGA.."
+          "progress_title": "Backing up 12-3-inch.."
         },
         {
-          "title": "14-6-fhd-half",
-          "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=revert --file=12-3-inch --fpga-type=xilinx",
           "async": true,
           "timeout": 350,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating $1 FPGA.."
+          "progress_title": "Reverting 12-3-inch.."
         },
         {
-          "title": "14-6-fhd-full",
-          "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_14_6_fhd",
+      "title": "14-6-fhd",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --info --skipbitstream",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 14-6-fhd..",
+          "result_pattern": "DEVICE=",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=flash --file=14-6-fhd --fpga-type=xilinx",
           "async": true,
           "timeout": 350,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating $1 FPGA.."
+          "progress_title": "Updating 14-6-fhd.."
         },
         {
-          "title": "14-6-nq3-g1b",
-          "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=dump --file=14-6-fhd --fpga-type=xilinx --size=2192012",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Backing up 14-6-fhd.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=revert --file=14-6-fhd --fpga-type=xilinx",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 14-6-fhd.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_14_6_fhd_half",
+      "title": "14-6-fhd-half",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --info --skipbitstream",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 14-6-fhd-half..",
+          "result_pattern": "DEVICE=",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=flash --file=14-6-fhd-half --fpga-type=xilinx",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating 14-6-fhd-half.."
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=dump --file=14-6-fhd-half --fpga-type=xilinx --size=2192012",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Backing up 14-6-fhd-half.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=revert --file=14-6-fhd-half --fpga-type=xilinx",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 14-6-fhd-half.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_14_6_fhd_full",
+      "title": "14-6-fhd-full",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --info --skipbitstream",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 14-6-fhd-full..",
+          "result_pattern": "DEVICE=",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=flash --file=14-6-fhd-full --fpga-type=xilinx",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating 14-6-fhd-full.."
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=dump --file=14-6-fhd-full --fpga-type=xilinx --size=2192012",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Backing up 14-6-fhd-full.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=revert --file=14-6-fhd-full --fpga-type=xilinx",
+          "async": true,
+          "timeout": 350,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 14-6-fhd-full.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_14_6_nq3_g1b",
+      "title": "14-6-nq3-g1b",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --info --skipbitstream",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 14-6-nq3-g1b..",
+          "result_pattern": "DEVICE=",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=flash --file=14-6-nq3-g1b --fpga-type=xilinx",
           "async": true,
           "timeout": 400,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating $1 FPGA.."
+          "progress_title": "Updating 14-6-nq3-g1b.."
         },
         {
-          "title": "14-6-nq7-g1b",
-          "action": "$MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bin",
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=dump --file=14-6-nq3-g1b --fpga-type=xilinx --size=3825788",
           "async": true,
           "timeout": 400,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating $1 FPGA.."
+          "progress_title": "Backing up 14-6-nq3-g1b.."
         },
         {
-          "title": "15-6-2k5",
-          "action": "sudo $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-lattice.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bit",
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=revert --file=14-6-nq3-g1b --fpga-type=xilinx",
+          "async": true,
+          "timeout": 400,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 14-6-nq3-g1b.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_14_6_nq7_g1b",
+      "title": "14-6-nq7-g1b",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --info --skipbitstream",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 14-6-nq7-g1b..",
+          "result_pattern": "DEVICE=",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=flash --file=14-6-nq7-g1b --fpga-type=xilinx",
+          "async": true,
+          "timeout": 400,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating 14-6-nq7-g1b.."
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=dump --file=14-6-nq7-g1b --fpga-type=xilinx --size=3825788",
+          "async": true,
+          "timeout": 400,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Backing up 14-6-nq7-g1b.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=revert --file=14-6-nq7-g1b --fpga-type=xilinx",
+          "async": true,
+          "timeout": 400,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 14-6-nq7-g1b.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_15_6_2k5",
+      "title": "15-6-2k5",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --info --skipbitstream",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 15-6-2k5..",
+          "result_pattern": "DEVICE=",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=flash --file=15-6-2k5 --fpga-type=lattice",
           "async": true,
           "timeout": 70,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating $1 FPGA.."
+          "progress_title": "Updating 15-6-2k5.."
         },
         {
-          "title": "27-inch",
-          "action": "sudo $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-lattice.sh --flash=$MICROPANEL_HOME/fpga/bitbin/$1.bit",
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=dump --file=15-6-2k5 --fpga-type=lattice --size=1078990",
           "async": true,
           "timeout": 70,
           "log_file": "/tmp/fpga-flash.log",
-          "progress_title": "Updating $1 FPGA..."
+          "progress_title": "Backing up 15-6-2k5.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=revert --file=15-6-2k5 --fpga-type=lattice",
+          "async": true,
+          "timeout": 70,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 15-6-2k5.."
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "fpga_27_inch",
+      "title": "27-inch",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher.sh --info --skipbitstream",
+          "async": true,
+          "timeout": 25,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Detecting 27-inch..",
+          "result_pattern": "DEVICE=",
+          "result_prefix": "FPGA: "
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=flash --file=27-inch --fpga-type=lattice",
+          "async": true,
+          "timeout": 70,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Updating 27-inch.."
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=dump --file=27-inch --fpga-type=lattice --size=1078990",
+          "async": true,
+          "timeout": 70,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Backing up 27-inch.."
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/fpga/bin/fpga-jtag-flasher-wrapper.sh --operation=revert --file=27-inch --fpga-type=lattice",
+          "async": true,
+          "timeout": 70,
+          "log_file": "/tmp/fpga-flash.log",
+          "progress_title": "Reverting 27-inch.."
         },
         {
           "title": "Back"
@@ -249,8 +551,8 @@
       "enabled": false,
       "type": "GenericList",
       "items_source": "$MICROPANEL_HOME/usr/bin/list-videos.sh",
-      "items_path": "$MICROPANEL_HOME/usr/share/micropanel/media/videos",
-      "items_action": "$MICROPANEL_HOME/usr/bin/play-video.sh $1 $MICROPANEL_HOME/usr/share/micropanel/media/videos",
+      "items_path": "$MICROPANEL_HOME/media/videos",
+      "items_action": "$MICROPANEL_HOME/usr/bin/play-video.sh $1 $MICROPANEL_HOME/media/videos",
       "list_selection": "$MICROPANEL_HOME/usr/bin/list-videos.sh",
       "list_items": [
         {"title": "Stop-Playback", "action": "$MICROPANEL_HOME/usr/bin/stop-video.sh"},
@@ -263,8 +565,8 @@
       "enabled": false,
       "type": "GenericList",
       "items_source": "$MICROPANEL_HOME/usr/bin/list-images.sh",
-      "items_path": "$MICROPANEL_HOME/usr/share/micropanel/media/images",
-      "items_action": "$MICROPANEL_HOME/usr/bin/play-image.sh $1 $MICROPANEL_HOME/usr/share/micropanel/media/images",
+      "items_path": "$MICROPANEL_HOME/media/images",
+      "items_action": "$MICROPANEL_HOME/usr/bin/play-image.sh $1 $MICROPANEL_HOME/media/images",
       "list_selection": "$MICROPANEL_HOME/usr/bin/list-images.sh",
       "list_items": [
         {"title": "Stop-Playback", "action": "$MICROPANEL_HOME/usr/bin/stop-image.sh"},
@@ -289,14 +591,14 @@
       "type": "GenericList",
       "list_items": [
         {"title": "Back"},
-        {"title": "edid", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "12.3", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "14.6-fhd", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "14.6-2k5", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "15.6-2k5", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"},
-        {"title": "27", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt --type=$1"}
+        {"title": "edid", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "12.3", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "14.6-fhd", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "14.6-2k5", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "15.6-2k5", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"},
+        {"title": "27", "action": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt --type=$1"}
       ],
-      "list_selection": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/usr/share/micropanel/configs/ --input=/boot/firmware/config.txt"
+      "list_selection": "$MICROPANEL_HOME/usr/bin/pi-config-txt.sh --configspath=$MICROPANEL_HOME/configs/ --input=/boot/firmware/config.txt"
     },
     {
       "id": "netinfo",
@@ -434,6 +736,6 @@
     }
   ],
   "persistent_data": {
-    "file_path": "$MICROPANEL_HOME/etc/micropanel/settings.json"
+    "file_path": "$MICROPANEL_HOME/settings.json"
   }
 }

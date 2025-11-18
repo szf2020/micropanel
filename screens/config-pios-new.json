@@ -46,7 +46,6 @@
       "enabled": true,
       "type": "menu",
       "submenus": [
-        {"id": "test_patches", "title": "Test Patches"},
         {"id": "test_patterns", "title": "Patterns"},
         {"id": "video_player", "title": "Videos"},
         {"id": "image_player", "title": "Images"},
@@ -95,6 +94,7 @@
       "enabled": false,
       "type": "menu",
       "submenus": [
+        {"id": "back", "title": "Back"},
         {"id": "fpga_12_3_inch", "title": "12-3-inch"},
         {"id": "fpga_14_6_fhd", "title": "14-6-fhd"},
         {"id": "fpga_14_6_fhd_half", "title": "14-6-fhd-half"},
@@ -102,8 +102,7 @@
         {"id": "fpga_14_6_nq3_g1b", "title": "14-6-nq3-g1b"},
         {"id": "fpga_14_6_nq7_g1b", "title": "14-6-nq7-g1b"},
         {"id": "fpga_15_6_2k5", "title": "15-6-2k5"},
-        {"id": "fpga_27_inch", "title": "27-inch"},
-        {"id": "back", "title": "Back"}
+        {"id": "fpga_27_inch", "title": "27-inch"}
       ]
     },
     {
@@ -512,24 +511,6 @@
           "title": "Back"
         }
       ]
-    },
-    {
-      "id": "test_patches",
-      "title": "Test Patches",
-      "enabled": false,
-      "type": "GenericList",
-      "list_items": [
-        {"title": "off", "action": "$MICROPANEL_HOME/usr/bin/patch-generator --off"},
-        {"title": "red", "action": "$MICROPANEL_HOME/usr/bin/patch-generator --daemon red"},
-        {"title": "green", "action": "$MICROPANEL_HOME/usr/bin/patch-generator --daemon green"},
-        {"title": "blue", "action": "$MICROPANEL_HOME/usr/bin/patch-generator --daemon blue"},
-        {"title": "cyan", "action": "$MICROPANEL_HOME/usr/bin/patch-generator --daemon cyan"},
-        {"title": "magenta", "action": "$MICROPANEL_HOME/usr/bin/patch-generator --daemon magenta"},
-        {"title": "yellow", "action": "$MICROPANEL_HOME/usr/bin/patch-generator --daemon yellow"},
-        {"title": "white", "action": "$MICROPANEL_HOME/usr/bin/patch-generator --daemon white"},
-        {"title": "Back"}
-      ],
-      "list_selection": "$MICROPANEL_HOME/usr/bin/patch-generator --read"
     },
     {
       "id": "test_patterns",

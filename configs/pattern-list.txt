@@ -19,3 +19,4 @@ ansi-checker
 zone-boundary-grid
 blooming-detection
 cross-dimming
+whitebox size 10

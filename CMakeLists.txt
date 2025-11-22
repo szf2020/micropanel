@@ -217,7 +217,6 @@ if(INSTALL_HELPER_SCRIPTS)
     install(FILES
         scripts/dhcp-net-settings.sh
         scripts/dhcp-net-settings-buildroot.sh
-        scripts/list-images.sh
         scripts/pi-config-txt.sh
         scripts/play-video.sh
         scripts/stop-video.sh
@@ -227,6 +226,7 @@ if(INSTALL_HELPER_SCRIPTS)
         scripts/list-videos.sh
         scripts/list-images.sh
         scripts/play-image.sh
+        scripts/get-current-image.sh
         scripts/stop-image.sh
         scripts/micropanel-version.sh
         scripts/micropanel-detect-i2c.sh

@@ -467,44 +467,251 @@
     },
     {
       "id": "mcu_flash_menu",
-      "type": "GenericList",
       "title": "IOC-Update",
       "enabled": false,
+      "type": "menu",
+      "submenus": [
+        {"id": "mcu_983hh", "title": "983HH"},
+        {"id": "mcu_983hh_blinkfast", "title": "983HH-BlinkFst"},
+        {"id": "mcu_983hh_blinkslo", "title": "983HH-BlinkSlo"},
+        {"id": "mcu_lat_ecp5", "title": "LAT-ECP5"},
+        {"id": "mcu_au15p", "title": "AU15P"},
+        {"id": "back", "title": "Back"}
+      ]
+    },
+    {
+      "id": "mcu_983hh",
+      "title": "983HH",
+      "enabled": false,
+      "type": "GenericList",
       "list_items": [
         {
-          "title": "983HH",
-          "action": "cd $MICROPANEL_HOME/flashrh850 && ./flashrh850.sh --script=bios-ver-09-autorun-delay.txt --bios=$1_Board_ROMBIOS.bin",
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --info",
+          "async": true,
+          "timeout": 30,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Detecting 983HH..",
+          "result_pattern": "MCU probe completed successfully",
+          "result_prefix": ""
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --bios-autorun=$MICROPANEL_HOME/share/sp6bins/firmware/bios-bin/983HH-bios-bin.bin",
           "async": true,
           "timeout": 120,
           "log_file": "/tmp/rh850-flash.log",
-          "progress_title": "Flashing MCU $1...",
+          "progress_title": "Updating 983HH..",
           "parse_progress": true
         },
         {
-          "title": "983HH-BlinkFst",
-          "action": "cd $MICROPANEL_HOME/flashrh850 && ./flashrh850.sh --script=fast-blink.txt --bios=983HH_Board_ROMBIOS.bin",
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --backup",
           "async": true,
           "timeout": 120,
           "log_file": "/tmp/rh850-flash.log",
-          "progress_title": "Flashing MCU $1...",
+          "progress_title": "Backing up 983HH..",
           "parse_progress": true
         },
         {
-          "title": "983HH-BlinkSlo",
-          "action": "cd $MICROPANEL_HOME/flashrh850 && ./flashrh850.sh --script=slow-blink.txt --bios=983HH_Board_ROMBIOS.bin",
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --recover",
           "async": true,
           "timeout": 120,
           "log_file": "/tmp/rh850-flash.log",
-          "progress_title": "Flashing MCU $1...",
+          "progress_title": "Reverting 983HH..",
           "parse_progress": true
         },
         {
-          "title": "EJ14-6",
-          "action": "cd $MICROPANEL_HOME/flashrh850 && ./flashrh850.sh --script=bios-ver-09-autorun-delay.txt --bios=$1_Board_ROMBIOS.bin",
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "mcu_983hh_blinkfast",
+      "title": "983HH-BlinkFst",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --info",
+          "async": true,
+          "timeout": 30,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Detecting 983HH..",
+          "result_pattern": "MCU probe completed successfully",
+          "result_prefix": ""
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --bios-autorun=$MICROPANEL_HOME/share/sp6bins/firmware/bios-bin/983HH-bios-bin-fastblink.bin",
           "async": true,
           "timeout": 120,
           "log_file": "/tmp/rh850-flash.log",
-          "progress_title": "Flashing IOC $1...",
+          "progress_title": "Updating 983HH-BlinkFst..",
+          "parse_progress": true
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --backup",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Backing up 983HH..",
+          "parse_progress": true
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --recover",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Reverting 983HH..",
+          "parse_progress": true
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "mcu_983hh_blinkslo",
+      "title": "983HH-BlinkSlo",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --info",
+          "async": true,
+          "timeout": 30,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Detecting 983HH..",
+          "result_pattern": "MCU probe completed successfully",
+          "result_prefix": ""
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --bios-autorun=$MICROPANEL_HOME/share/sp6bins/firmware/bios-bin/983HH-bios-bin-slowblink.bin",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Updating 983HH-BlinkSlo..",
+          "parse_progress": true
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --backup",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Backing up 983HH..",
+          "parse_progress": true
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/983HH.npj --recover",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Reverting 983HH..",
+          "parse_progress": true
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "mcu_lat_ecp5",
+      "title": "LAT-ECP5",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/LAT-ECP5.npj --info",
+          "async": true,
+          "timeout": 30,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Detecting LAT-ECP5..",
+          "result_pattern": "MCU probe completed successfully",
+          "result_prefix": ""
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/LAT-ECP5.npj --bios-autorun=$MICROPANEL_HOME/share/sp6bins/firmware/bios-bin/Space6_15.6POC_RH850_ROMBIOS_packet_bios.bin",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Updating LAT-ECP5..",
+          "parse_progress": true
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/LAT-ECP5.npj --backup",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Backing up LAT-ECP5..",
+          "parse_progress": true
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/LAT-ECP5.npj --recover",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Reverting LAT-ECP5..",
+          "parse_progress": true
+        },
+        {
+          "title": "Back"
+        }
+      ]
+    },
+    {
+      "id": "mcu_au15p",
+      "title": "AU15P",
+      "enabled": false,
+      "type": "GenericList",
+      "list_items": [
+        {
+          "title": "Detect",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/AU15P.npj --info",
+          "async": true,
+          "timeout": 30,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Detecting AU15P..",
+          "result_pattern": "MCU probe completed successfully",
+          "result_prefix": ""
+        },
+        {
+          "title": "Update",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/AU15P.npj --bios-autorun=$MICROPANEL_HOME/share/sp6bins/firmware/bios-bin/Z137_ROMBIOS_packet_bios.bin",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Updating AU15P..",
+          "parse_progress": true
+        },
+        {
+          "title": "Backup",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/AU15P.npj --backup",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Backing up AU15P..",
+          "parse_progress": true
+        },
+        {
+          "title": "Revert",
+          "action": "stdbuf -oL -eL $MICROPANEL_HOME/bin/flashrh850.sh --npj=$MICROPANEL_HOME/share/sp6bins/config/AU15P.npj --recover",
+          "async": true,
+          "timeout": 120,
+          "log_file": "/tmp/rh850-flash.log",
+          "progress_title": "Reverting AU15P..",
           "parse_progress": true
         },
         {

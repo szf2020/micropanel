@@ -753,12 +753,11 @@
       "enabled": false,
       "type": "GenericList",
       "prepend_static_items": true,
-      "items_source": "$MICROPANEL_HOME/usr/bin/list-images.sh --launcher=127.0.0.1:8081 --touch-gallery=127.0.0.1:8086",
-      "items_path": "$MICROPANEL_HOME/usr/share/micropanel/media/images",
-      "items_action": "$MICROPANEL_HOME/usr/bin/play-image.sh $1 $MICROPANEL_HOME/usr/share/micropanel/media/images --launcher=127.0.0.1:8081 --touch-gallery=127.0.0.1:8086",
+      "items_source": "$MICROPANEL_HOME/usr/bin/list-images.sh",
+      "items_path": "$MICROPANEL_HOME/share/qt-apps/Pictures",
+      "items_action": "$MICROPANEL_HOME/usr/bin/play-image.sh --image=$1 --launcher=127.0.0.1:8081 --touch-gallery=127.0.0.1:8086",
       "list_selection": "$MICROPANEL_HOME/usr/bin/get-current-image.sh --touch-gallery=127.0.0.1:8086",
       "list_items": [
-        {"title": "Stop-Playback", "action": "$MICROPANEL_HOME/usr/bin/stop-image.sh --launcher=127.0.0.1:8081"},
         {"title": "Back"}
       ]
     },

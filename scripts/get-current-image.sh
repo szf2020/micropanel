@@ -1,28 +1,53 @@
 #!/bin/sh
-# Get currently displayed image from touch-gallery via socket API
-# Compatible with busybox and standard Linux environments
+
+# Get currently displayed image from touch-gallery app
+# Usage: ./get-current-image.sh --touch-gallery=127.0.0.1:8086
+
+MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
 
 # Default values
-GALLERY="127.0.0.1:8086"
+GALLERY_ADDR="127.0.0.1:8086"
+TIMEOUT=2
 
-# Parse command line arguments
-while [ $# -gt 0 ]; do
-    case "$1" in
+# Parse command-line arguments
+for arg in "$@"; do
+    case "$arg" in
         --touch-gallery=*)
-            GALLERY="${1#*=}"
+            GALLERY_ADDR="${arg#*=}"
+            ;;
+        *)
+            # Ignore unknown arguments
             ;;
     esac
-    shift
 done
 
-# Extract host and port from GALLERY
-GALLERY_HOST="${GALLERY%:*}"
-GALLERY_PORT="${GALLERY#*:}"
+# Auto-detect launcher-client binary location
+if [ -n "$LAUNCHER_CLIENT" ] && [ -x "$LAUNCHER_CLIENT" ]; then
+    # User explicitly set LAUNCHER_CLIENT - use it
+    true
+elif [ -x "/usr/bin/launcher-client" ]; then
+    # Buildroot: installed to /usr/bin/
+    LAUNCHER_CLIENT="/usr/bin/launcher-client"
+elif [ -n "$MICROPANEL_HOME" ] && [ -x "$MICROPANEL_HOME/build/launcher-client" ]; then
+    # Pi OS: development build
+    LAUNCHER_CLIENT="$MICROPANEL_HOME/build/launcher-client"
+elif [ -n "$MICROPANEL_HOME" ] && [ -x "$MICROPANEL_HOME/usr/bin/launcher-client" ]; then
+    # Pi OS: installed to usr/bin
+    LAUNCHER_CLIENT="$MICROPANEL_HOME/usr/bin/launcher-client"
+else
+    # Fallback: try PATH
+    LAUNCHER_CLIENT="launcher-client"
+fi
 
-# Query touch-gallery for current image
-RESULT=$(echo "get-image" | nc "$GALLERY_HOST" "$GALLERY_PORT" 2>/dev/null)
+# Query current image
+response=$("$LAUNCHER_CLIENT" --srv="$GALLERY_ADDR" --command=get-image --timeoutsec="$TIMEOUT" 2>&1)
 
-# Return the filename (empty if no image loaded)
-echo "$RESULT"
+if [ $? -eq 0 ] && [ -n "$response" ] && ! echo "$response" | grep -qi "error"; then
+    # Got a valid image name
+    echo "$response"
+else
+    # App not running or no image loaded - return "off"
+    echo "off"
+fi
 
 exit 0

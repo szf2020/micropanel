@@ -1,24 +1,50 @@
 #!/bin/sh
+# List images from touch-gallery via socket API
+# Compatible with busybox and standard Linux environments
 
-# Path to directory containing image files
-IMAGE_DIR="${1:-/media/files/path}"
+# Default values
+LAUNCHER=""
+GALLERY="127.0.0.1:8086"
+IMAGE_DIR=""
 
-# Check if any arguments were provided
-if [ $# -eq 0 ]; then
-    # If called with no arguments, return the currently playing image
-    if [ -f "/tmp/last_played_image" ]; then
-        cat "/tmp/last_played_image"
-    fi
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --launcher=*)
+            LAUNCHER="${1#*=}"
+            ;;
+        --touch-gallery=*)
+            GALLERY="${1#*=}"
+            ;;
+        *)
+            # First positional argument is image directory (optional)
+            if [ -z "$IMAGE_DIR" ]; then
+                IMAGE_DIR="$1"
+            fi
+            ;;
+    esac
+    shift
+done
+
+# Extract host and port from GALLERY
+GALLERY_HOST="${GALLERY%:*}"
+GALLERY_PORT="${GALLERY#*:}"
+
+# If directory specified, set it first
+if [ -n "$IMAGE_DIR" ]; then
+    echo "set-directory $IMAGE_DIR" | nc "$GALLERY_HOST" "$GALLERY_PORT" > /dev/null 2>&1
+fi
+
+# Query touch-gallery for image list
+RESULT=$(echo "list-images" | nc "$GALLERY_HOST" "$GALLERY_PORT" 2>/dev/null)
+
+# Check if we got a result
+if [ -z "$RESULT" ]; then
+    # No images found or connection failed
     exit 0
 fi
 
-# Check if directory exists
-if [ ! -d "$IMAGE_DIR" ]; then
-    echo "Error: Directory $IMAGE_DIR not found"
-    exit 1
-fi
+# Convert comma-separated list to newline-separated
+echo "$RESULT" | tr ',' '\n'
 
-# List all image files in the directory
-# Use POSIX-compatible find command - busybox doesn't support -printf
-find "$IMAGE_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.bmp" \) | sed 's|.*/||' | sort
 exit 0

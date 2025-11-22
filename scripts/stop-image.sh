@@ -1,18 +1,42 @@
 #!/bin/sh
+# Stop touch-gallery via launcher socket API
+# Compatible with busybox and standard Linux environments
 
-# Stop Image Playback Script for MicroPanel
-# Clears the framebuffer and resets last played image tracking
-# Compatible with /bin/sh (POSIX) - works on buildroot busybox and Raspberry Pi OS
+# Default values
+LAUNCHER="127.0.0.1:8081"
+GALLERY="127.0.0.1:8086"
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --launcher=*)
+            LAUNCHER="${1#*=}"
+            ;;
+        --touch-gallery=*)
+            GALLERY="${1#*=}"
+            ;;
+    esac
+    shift
+done
 
 echo "Stopping image playback"
 
-# Clear framebuffer (remove sudo since micropanel typically runs as root in buildroot)
-# If running as non-root user (Pi OS), this may require sudo permissions
-if [ -c /dev/fb0 ]; then
-    dd if=/dev/zero of=/dev/fb0 bs=1M count=1 > /dev/null 2>&1 || true
+# Extract host and port from LAUNCHER
+LAUNCHER_HOST="${LAUNCHER%:*}"
+LAUNCHER_PORT="${LAUNCHER#*:}"
+
+# Stop touch-gallery via launcher
+RESPONSE=$(echo "stop-app gallery" | nc "$LAUNCHER_HOST" "$LAUNCHER_PORT" 2>/dev/null)
+
+if [ "$RESPONSE" = "OK" ]; then
+    echo "Touch-gallery stopped successfully"
+    exit 0
+else
+    # Fallback: try to quit via gallery socket directly
+    GALLERY_HOST="${GALLERY%:*}"
+    GALLERY_PORT="${GALLERY#*:}"
+
+    echo "quit" | nc "$GALLERY_HOST" "$GALLERY_PORT" > /dev/null 2>&1
+    echo "Sent quit command to touch-gallery"
+    exit 0
 fi
-
-# Clear the last played image file
-echo "" > /tmp/last_played_image
-
-exit 0

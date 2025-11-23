@@ -8,10 +8,13 @@ MICROPANEL_HOME="${MICROPANEL_HOME:-/home/pi/micropanel}"
 
 # Detect buildroot vs Pi OS environment for pattern-list.txt path
 if [ -f "/usr/share/micropanel/configs/pattern-list.txt" ] || [ -d "/usr/share/micropanel" ]; then
-    # Buildroot: installed to /usr/share/micropanel/configs/
+    # Buildroot: system-wide install to /usr/share/micropanel/configs/
     PATTERN_LIST_FILE="/usr/share/micropanel/configs/pattern-list.txt"
+elif [ -f "$MICROPANEL_HOME/usr/share/micropanel/configs/pattern-list.txt" ]; then
+    # Pi OS: development install to $MICROPANEL_HOME/usr/share/micropanel/configs/
+    PATTERN_LIST_FILE="$MICROPANEL_HOME/usr/share/micropanel/configs/pattern-list.txt"
 else
-    # Pi OS: development environment
+    # Fallback: legacy location for backward compatibility
     PATTERN_LIST_FILE="$MICROPANEL_HOME/configs/pattern-list.txt"
 fi
 

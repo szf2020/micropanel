@@ -65,10 +65,12 @@ generate_display_config() {
     load_display_config "$config_type"
 
     if [ "$config_type" = "edid" ]; then
-        # EDID auto-detection - no custom timings
+        # EDID auto-detection - use full KMS for proper EDID reading
+        echo "dtoverlay=vc4-kms-v3d"
         echo "display_auto_detect=1"
     else
-        # Custom timing configuration
+        # Custom timing configuration - use fake KMS for custom hdmi_timings
+        echo "dtoverlay=vc4-fkms-v3d"
         echo "hdmi_group=2"
         echo "hdmi_mode=87"
         echo "hdmi_timings=$HDMI_TIMINGS"

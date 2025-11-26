@@ -10,6 +10,7 @@ arm_64bit=1
 arm_boost=1
 disable_fw_kms_setup=1
 max_framebuffers=2
+dtoverlay=himax-touch
 
 # Display-specific section will be inserted here by the script
 

@@ -83,6 +83,25 @@ generate_display_config() {
     fi
 }
 
+# Function to configure HH983 serializer module
+configure_hh983_serializer() {
+    local config_type="$1"
+    local hh983_conf="/etc/modprobe.d/hh983.conf"
+
+    # 15.6-2k5 requires config_mode=0, all others require config_mode=1
+    if [ "$config_type" = "15.6-2k5" ]; then
+        echo "options hh983-serializer config_mode=0" > "$hh983_conf"
+        if [ $VERBOSE -eq 1 ]; then
+            echo "HH983 serializer configured: config_mode=0 (for 15.6-2k5)"
+        fi
+    else
+        echo "options hh983-serializer config_mode=1" > "$hh983_conf"
+        if [ $VERBOSE -eq 1 ]; then
+            echo "HH983 serializer configured: config_mode=1 (default)"
+        fi
+    fi
+}
+
 # Function to create complete configuration
 create_config() {
     local config_type="$1"
@@ -108,6 +127,9 @@ EOF
     # Copy to final destination
     cp "$temp_file" "$output_file"
     rm "$temp_file"
+
+    # Configure HH983 serializer based on display type
+    configure_hh983_serializer "$config_type"
 }
 
 # Function to extract config content for comparison
